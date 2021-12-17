@@ -10,8 +10,27 @@ import (
 	"github.com/asahnoln/mesproc"
 )
 
+type stubHandler struct {
+	m      map[string]string
+	target string
+}
+
+func (h *stubHandler) Receive(w http.ResponseWriter, r *http.Request) string {
+	var m struct {
+		Message string
+	}
+	_ = json.NewDecoder(r.Body).Decode(&m)
+	_, _ = w.Write([]byte("ok"))
+	return m.Message
+}
+
+func (h *stubHandler) Send(k string) {
+	_, _ = http.Post(h.target, "", strings.NewReader(`{"message": "`+h.m[k]+`"}`))
+}
+
 func TestReceive(t *testing.T) {
-	srv := mesproc.NewServer(nil, "")
+	h := &stubHandler{}
+	srv := mesproc.NewServer(h)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"message": "/start"}`))
 	srv.ServeHTTP(w, r)
@@ -25,19 +44,21 @@ func TestReceive(t *testing.T) {
 }
 
 func TestSend(t *testing.T) {
-	m := mesproc.AnswerMap{
+	m := map[string]string{
 		"/start": "Choose your language",
 	}
+
 	var got string
 	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var m struct {
 			Message string
 		}
-		json.NewDecoder(r.Body).Decode(&m)
+		_ = json.NewDecoder(r.Body).Decode(&m)
 		got = m.Message
 	}))
 
-	srv := mesproc.NewServer(m, service.URL)
+	h := &stubHandler{m: m, target: service.URL}
+	srv := mesproc.NewServer(h)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"message": "/start"}`))
 	srv.ServeHTTP(w, r)

@@ -1,36 +1,24 @@
 package mesproc
 
 import (
-	"encoding/json"
 	"net/http"
-	"strings"
 )
-
-const (
-	OK_ANSWER = "ok"
-)
-
-type AnswerMap map[string]string
 
 type Server struct {
-	m      AnswerMap
-	target string
+	h Handler
 }
 
-func NewServer(m AnswerMap, target string) *Server {
+type Handler interface {
+	Receive(http.ResponseWriter, *http.Request) string
+	Send(string)
+}
+
+func NewServer(h Handler) *Server {
 	return &Server{
-		m:      m,
-		target: target,
+		h,
 	}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var m struct {
-		Message string
-	}
-	_ = json.NewDecoder(r.Body).Decode(&m)
-
-	http.Post(s.target, "", strings.NewReader(`{"message": "`+s.m[m.Message]+`"}`))
-
-	w.Write([]byte(OK_ANSWER))
+	s.h.Send(s.h.Receive(w, r))
 }
