@@ -10,9 +10,44 @@ import (
 	"github.com/asahnoln/mesproc"
 )
 
+const command = "/start"
+
+func TestHandle(t *testing.T) {
+	h := prepareHandler()
+	externalServiceMock(h)
+
+	srv := mesproc.NewServer(h)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"message": "`+command+`"}`))
+	srv.ServeHTTP(w, r)
+
+	assertSameString(t, "ok", w.Body.String(), "want response answer %q, got %q")
+	assertSameString(t, h.m[command], h.got, "want service receive message %q, got %q")
+}
+
+func assertSameString(t testing.TB, want, got, message string) {
+	t.Helper()
+
+	if want != got {
+		t.Errorf(message, want, got)
+	}
+}
+
+func prepareHandler() *stubHandler {
+	return &stubHandler{m: map[string]string{
+		command: "Choose your language",
+	}}
+}
+
+func externalServiceMock(h *stubHandler) {
+	service := httptest.NewServer(h)
+	h.target = service.URL
+}
+
 type stubHandler struct {
 	m      map[string]string
 	target string
+	got    string
 }
 
 func (h *stubHandler) Receive(w http.ResponseWriter, r *http.Request) string {
@@ -28,43 +63,10 @@ func (h *stubHandler) Send(k string) {
 	_, _ = http.Post(h.target, "", strings.NewReader(`{"message": "`+h.m[k]+`"}`))
 }
 
-func TestReceive(t *testing.T) {
-	h := &stubHandler{}
-	srv := mesproc.NewServer(h)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"message": "/start"}`))
-	srv.ServeHTTP(w, r)
-
-	want := "ok"
-	got := w.Body.String()
-
-	if want != got {
-		t.Errorf("want response answer %q, got %q", want, got)
+func (h *stubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var m struct {
+		Message string
 	}
-}
-
-func TestSend(t *testing.T) {
-	m := map[string]string{
-		"/start": "Choose your language",
-	}
-
-	var got string
-	service := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var m struct {
-			Message string
-		}
-		_ = json.NewDecoder(r.Body).Decode(&m)
-		got = m.Message
-	}))
-
-	h := &stubHandler{m: m, target: service.URL}
-	srv := mesproc.NewServer(h)
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"message": "/start"}`))
-	srv.ServeHTTP(w, r)
-
-	want := m["/start"]
-	if want != got {
-		t.Errorf("want service receive message %q, got %q", want, got)
-	}
+	_ = json.NewDecoder(r.Body).Decode(&m)
+	h.got = m.Message
 }
