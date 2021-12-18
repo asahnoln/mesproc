@@ -1,8 +1,14 @@
 package mesproc
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 )
+
+type TgUpdate struct {
+	Message string
+}
 
 type TgSendMessage struct {
 	Text string
@@ -17,11 +23,22 @@ func NewTgHandler(target string) *TgHandler {
 }
 
 func (h *TgHandler) Receive(w http.ResponseWriter, r *http.Request) string {
-	return ""
+	var u TgUpdate
+	_ = json.NewDecoder(r.Body).Decode(&u)
+	return u.Message
 }
 
-func (h *TgHandler) Send(string) {
-	_ = TgSendMessage{"LILKI"}
-	// json.NewEncoder(w io.Writer)
-	http.Post(h.target, "", nil)
+func (h *TgHandler) Send(message string) {
+	var text string
+	// TODO: Use story module
+	switch message {
+	case "/ru":
+		text = "Выберите сектор"
+	case "/en":
+		text = "Choose sector"
+	}
+	m, _ := json.Marshal(TgSendMessage{
+		Text: text,
+	})
+	http.Post(h.target, "", bytes.NewReader(m))
 }

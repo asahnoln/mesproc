@@ -1,7 +1,9 @@
 package mesproc_test
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,15 +16,33 @@ type stubTgServer struct {
 }
 
 func TestTgHandler(t *testing.T) {
+	// TODO: Use story module
 	stg := &stubTgServer{}
 	tg := mesproc.NewTgHandler(stg.tgServerMockURL())
 	srv := mesproc.NewServer(tg)
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	srv.ServeHTTP(w, r)
+	tests := []struct {
+		updateMessage string
+		wantAnswer    string
+	}{
+		{"/ru", "Выберите сектор"},
+		{"/en", "Choose sector"},
+	}
 
-	assertSameString(t, "Choose sector", stg.got, "want tg service receiving message %q, got %q")
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("Send update %q, expect answer %q", tt.updateMessage, tt.wantAnswer), func(t *testing.T) {
+			update := mesproc.TgUpdate{
+				Message: tt.updateMessage,
+			}
+			body, _ := json.Marshal(&update)
+
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
+			srv.ServeHTTP(w, r)
+
+			assertSameString(t, tt.wantAnswer, stg.got, "want tg service receiving message %q, got %q")
+		})
+	}
 }
 
 func (s *stubTgServer) tgServerMockURL() string {
