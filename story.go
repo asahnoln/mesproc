@@ -1,30 +1,46 @@
 package mesproc
 
-type AnswerMap map[string]string
-
 type Story struct {
-	asnwers    AnswerMap
-	gotAnswers map[string]bool
+	steps []*Step
 }
 
-func NewStory(m AnswerMap) *Story {
-	return &Story{
-		asnwers:    m,
-		gotAnswers: make(map[string]bool),
-	}
+type Step struct {
+	response string
 }
 
-func (s *Story) Respond(m string) string {
-	if a := s.gotAnswers[m]; a {
-		switch m {
-		case "sector 1":
-			return "Please type `lulz`"
-		case "lulz":
-			return "Please type `winners 5`"
-		case "winners 5":
-			return "Please type `guds`"
-		}
+func NewStory() *Story {
+	return &Story{}
+}
+
+func (s *Story) Add(step *Step) {
+	s.steps = append(s.steps, step)
+}
+
+func (s *Story) RespondTo(m string) string {
+	var r string
+	switch m {
+	case "sector 1":
+		r = s.steps[0].response
+	case "lulz":
+		r = s.steps[1].response
 	}
-	s.gotAnswers[m] = true
-	return s.asnwers[m]
+
+	return r
+}
+
+func NewStep() *Step {
+	return &Step{}
+}
+
+func (s *Step) Expect(string) *Step {
+	return s
+}
+
+func (s *Step) Respond(r string) *Step {
+	s.response = r
+	return s
+}
+
+func (s *Step) Response() string {
+	return s.response
 }

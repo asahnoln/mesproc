@@ -6,25 +6,17 @@ import (
 	"github.com/asahnoln/mesproc"
 )
 
-func TestRespond(t *testing.T) {
-	const (
-		s1   = "sector 1"
-		lulz = "lulz"
-		w5   = "winners 5"
-	)
-	m := mesproc.AnswerMap{
-		s1:   "That's the story of sector 1. Now type `lulz`",
-		lulz: "Middle story of lulz",
-		w5:   "Final story of winners 5",
-	}
-	s := mesproc.NewStory(m)
+func TestSteps(t *testing.T) {
+	str := mesproc.NewStory()
 
-	assertSameString(t, m[s1], s.Respond(s1), "want response %q, got %q")
-	assertSameString(t, "Please type `lulz`", s.Respond(s1), "want response %q to repeated request, got %q")
+	stp1 := mesproc.NewStep().Expect("sector 1").Respond("The story of this sector")
+	assertSameString(t, "The story of this sector", stp1.Response(), "want response %q, got %q")
 
-	assertSameString(t, m[lulz], s.Respond(lulz), "want response %q, got %q")
-	assertSameString(t, "Please type `winners 5`", s.Respond(lulz), "want response %q to repeated request, got %q")
+	stp2 := mesproc.NewStep().Expect("lulz").Respond("Chilling lulz")
 
-	assertSameString(t, m[w5], s.Respond(w5), "want response %q, got %q")
-	assertSameString(t, "Please type `guds`", s.Respond(w5), "want response %q to repeated request, got %q")
+	str.Add(stp1)
+	str.Add(stp2)
+
+	assertSameString(t, stp1.Response(), str.RespondTo("sector 1"), "want response %q, got %q")
+	assertSameString(t, stp2.Response(), str.RespondTo("lulz"), "want response %q, got %q")
 }
