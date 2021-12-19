@@ -4,7 +4,7 @@
 ** Story module
 This one follows the script - what to receive and how to respond to given messages.
 
-*** TODO Receive message - respond with a message
+*** DONE Receive message - respond with a message
 *** TODO Respond with different messages to different messages
 *** TODO Expectations - expect specific messages after other messages
 *** TODO Different users - different users have different expectations - steps in stories
