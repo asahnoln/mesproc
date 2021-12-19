@@ -18,7 +18,10 @@ type stubTgServer struct {
 func TestTgHandler(t *testing.T) {
 	// TODO: Use story module
 	stg := &stubTgServer{}
-	tg := mesproc.NewTgHandler(stg.tgServerMockURL())
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	tg := mesproc.NewTgHandler(target)
 	srv := mesproc.NewServer(tg)
 
 	tests := []struct {
@@ -45,11 +48,17 @@ func TestTgHandler(t *testing.T) {
 	}
 }
 
-func (s *stubTgServer) tgServerMockURL() string {
+func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var m mesproc.TgSendMessage
-		json.NewDecoder(r.Body).Decode(&m)
-		s.got = m.Text
+		mux := http.NewServeMux()
+		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
+			var m mesproc.TgSendMessage
+			json.NewDecoder(r.Body).Decode(&m)
+			s.got = m.Text
+		})
+
+		mux.ServeHTTP(w, r)
 	}))
-	return srv.URL
+
+	return srv.Close, srv.URL
 }

@@ -40,5 +40,5 @@ func (h *TgHandler) Send(message string) {
 	m, _ := json.Marshal(TgSendMessage{
 		Text: text,
 	})
-	http.Post(h.target, "", bytes.NewReader(m))
+	http.Post(h.target+"/sendMessage", "", bytes.NewReader(m))
 }
