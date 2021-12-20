@@ -53,5 +53,5 @@ func (h *TgHandler) Send(message string) {
 		ChatID: h.lastChatID,
 		Text:   text,
 	})
-	http.Post(h.target+"/sendMessage", "", bytes.NewReader(m))
+	http.Post(h.target+"/sendMessage", "application/json", bytes.NewReader(m))
 }

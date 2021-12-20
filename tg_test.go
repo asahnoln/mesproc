@@ -12,8 +12,8 @@ import (
 )
 
 type stubTgServer struct {
-	gotText   string
-	gotChatID int
+	gotText, gotHeader string
+	gotChatID          int
 }
 
 func TestTgHandler(t *testing.T) {
@@ -49,6 +49,7 @@ func TestTgHandler(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
 			srv.ServeHTTP(w, r)
 
+			assertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
 			assertSameString(t, tt.wantAnswer, stg.gotText, "want tg service receiving message %q, got %q")
 			assertSameInt(t, update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
 		})
@@ -61,6 +62,7 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
 			var m mesproc.TgSendMessage
 			json.NewDecoder(r.Body).Decode(&m)
+			s.gotHeader = r.Header.Get("Content-Type")
 			s.gotText = m.Text
 			s.gotChatID = m.ChatID
 		})
