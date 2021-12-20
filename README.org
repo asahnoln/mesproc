@@ -10,3 +10,4 @@ This one follows the script - what to receive and how to respond to given messag
 *** TODO Different users - different users have different expectations - steps in stories
 *** TODO Different responses to the same request according to set parameters (language)
 *** TODO Different responses to old requests according to current step in the story
+*** TODO Test for json tags?
