@@ -20,8 +20,8 @@ type TgMessage struct {
 }
 
 type TgSendMessage struct {
-	ChatID int
-	Text   string
+	ChatID int    `json:"chat_id"`
+	Text   string `json:"text"`
 }
 
 type TgHandler struct {
