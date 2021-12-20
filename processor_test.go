@@ -33,6 +33,14 @@ func assertSameString(t testing.TB, want, got, message string) {
 	}
 }
 
+func assertSameInt(t testing.TB, want, got int, message string) {
+	t.Helper()
+
+	if want != got {
+		t.Errorf(message, want, got)
+	}
+}
+
 func prepareHandler() *stubHandler {
 	return &stubHandler{m: map[string]string{
 		command: "Choose your language",

@@ -12,7 +12,8 @@ import (
 )
 
 type stubTgServer struct {
-	got string
+	gotText   string
+	gotChatID int
 }
 
 func TestTgHandler(t *testing.T) {
@@ -35,7 +36,12 @@ func TestTgHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("Send update %q, expect answer %q", tt.updateMessage, tt.wantAnswer), func(t *testing.T) {
 			update := mesproc.TgUpdate{
-				Message: tt.updateMessage,
+				Message: mesproc.TgMessage{
+					Chat: mesproc.TgChat{
+						ID: 187,
+					},
+					Text: tt.updateMessage,
+				},
 			}
 			body, _ := json.Marshal(&update)
 
@@ -43,7 +49,8 @@ func TestTgHandler(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
 			srv.ServeHTTP(w, r)
 
-			assertSameString(t, tt.wantAnswer, stg.got, "want tg service receiving message %q, got %q")
+			assertSameString(t, tt.wantAnswer, stg.gotText, "want tg service receiving message %q, got %q")
+			assertSameInt(t, update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
 		})
 	}
 }
@@ -54,7 +61,8 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
 			var m mesproc.TgSendMessage
 			json.NewDecoder(r.Body).Decode(&m)
-			s.got = m.Text
+			s.gotText = m.Text
+			s.gotChatID = m.ChatID
 		})
 
 		mux.ServeHTTP(w, r)

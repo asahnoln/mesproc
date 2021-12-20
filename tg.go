@@ -7,25 +7,37 @@ import (
 )
 
 type TgUpdate struct {
-	Message string
+	Message TgMessage
 }
 
-type TgSendMessage struct {
+type TgChat struct {
+	ID int
+}
+
+type TgMessage struct {
+	Chat TgChat
 	Text string
 }
 
+type TgSendMessage struct {
+	ChatID int
+	Text   string
+}
+
 type TgHandler struct {
-	target string
+	target     string
+	lastChatID int
 }
 
 func NewTgHandler(target string) *TgHandler {
-	return &TgHandler{target}
+	return &TgHandler{target: target}
 }
 
 func (h *TgHandler) Receive(w http.ResponseWriter, r *http.Request) string {
 	var u TgUpdate
 	_ = json.NewDecoder(r.Body).Decode(&u)
-	return u.Message
+	h.lastChatID = u.Message.Chat.ID
+	return u.Message.Text
 }
 
 func (h *TgHandler) Send(message string) {
@@ -38,7 +50,8 @@ func (h *TgHandler) Send(message string) {
 		text = "Choose sector"
 	}
 	m, _ := json.Marshal(TgSendMessage{
-		Text: text,
+		ChatID: h.lastChatID,
+		Text:   text,
 	})
 	http.Post(h.target+"/sendMessage", "", bytes.NewReader(m))
 }
