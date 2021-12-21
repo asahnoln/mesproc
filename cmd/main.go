@@ -9,7 +9,21 @@ import (
 )
 
 func main() {
-	tg := mesproc.NewTgHandler(os.Getenv("BOT_ADDR"))
+	tg := mesproc.NewTgHandler(os.Getenv("BOT_ADDR"),
+		mesproc.NewStory().
+			Add(mesproc.NewStep().
+				Expect("sector 1").
+				Respond("move on to next sector").
+				Fail("Enter `sector 1`")).
+			Add(mesproc.NewStep().
+				Expect("sector 2").
+				Respond("go to next sector, yes, which is named 'lulz'").
+				Fail("Enter `sector 2`")).
+			Add(mesproc.NewStep().
+				Expect("lulz").
+				Respond("finish here").
+				Fail("Enter `lulz`")),
+	)
 	srv := mesproc.NewServer(tg)
 
 	log.Fatalln(http.ListenAndServeTLS(

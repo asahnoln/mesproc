@@ -15,8 +15,13 @@ func NewStory() *Story {
 	return &Story{}
 }
 
-func (s *Story) Add(step *Step) {
+func (s *Story) Add(step *Step) *Story {
 	s.steps = append(s.steps, step)
+	return s
+}
+
+func (s *Story) Step() *Step {
+	return s.steps[s.curStep]
 }
 
 func (s *Story) RespondTo(m string) string {
@@ -41,6 +46,10 @@ func (s *Step) Expect(e string) *Step {
 func (s *Step) Respond(r string) *Step {
 	s.response = r
 	return s
+}
+
+func (s *Step) Expectation() string {
+	return s.expectation
 }
 
 func (s *Step) Response() string {

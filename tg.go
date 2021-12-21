@@ -27,10 +27,11 @@ type TgSendMessage struct {
 type TgHandler struct {
 	target     string
 	lastChatID int
+	str        *Story
 }
 
-func NewTgHandler(target string) *TgHandler {
-	return &TgHandler{target: target}
+func NewTgHandler(target string, str *Story) *TgHandler {
+	return &TgHandler{target: target, str: str}
 }
 
 func (h *TgHandler) Receive(w http.ResponseWriter, r *http.Request) string {
@@ -41,17 +42,9 @@ func (h *TgHandler) Receive(w http.ResponseWriter, r *http.Request) string {
 }
 
 func (h *TgHandler) Send(message string) {
-	var text string
-	// TODO: Use story module
-	switch message {
-	case "/ru":
-		text = "Выберите сектор"
-	case "/en":
-		text = "Choose sector"
-	}
 	m, _ := json.Marshal(TgSendMessage{
 		ChatID: h.lastChatID,
-		Text:   text,
+		Text:   h.str.RespondTo(message),
 	})
 	http.Post(h.target+"/sendMessage", "application/json", bytes.NewReader(m))
 }
