@@ -43,3 +43,16 @@ func TestSteps(t *testing.T) {
 	assertSameString(t, stp2.FailMessage(), str.RespondTo("sector 1"), "want response %q, got %q")
 	assertSameString(t, stp2.Response(), str.RespondTo("lulz"), "want response %q, got %q")
 }
+
+func TestStoryMustLoop(t *testing.T) {
+	str := mesproc.NewStory().
+		Add(mesproc.NewStep().Expect("s1").Respond("step 1")).
+		Add(mesproc.NewStep().Expect("s2").Respond("step 2")).
+		Add(mesproc.NewStep().Expect("s3").Respond("step 3"))
+
+	str.RespondTo("s1")
+	str.RespondTo("s2")
+	str.RespondTo("s3")
+
+	assertSameString(t, "step 1", str.Step().Response(), "want response %q got %q")
+}

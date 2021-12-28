@@ -21,6 +21,10 @@ func (s *Story) Add(step *Step) *Story {
 }
 
 func (s *Story) Step() *Step {
+	if s.curStep == len(s.steps) {
+		s.curStep = 0
+	}
+
 	return s.steps[s.curStep]
 }
 

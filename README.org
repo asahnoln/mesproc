@@ -7,8 +7,9 @@ This one follows the script - what to receive and how to respond to given messag
 *** DONE Receive message - respond with a message
 *** DONE Respond with different messages to different messages
 *** DONE Expectations - expect specific messages after other messages
-*** TODO Different users - different users have different expectations - steps in stories
-*** TODO Handle story ending
+*** DONE Different users - different users have different expectations - steps in stories
+Just create a story each time again
+*** DONE Handle story ending - looping
 *** TODO Different responses to the same request according to set parameters (language)
 *** TODO Different responses to old requests according to current step in the story
 *** TODO Test for json tags?
