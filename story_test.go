@@ -56,3 +56,23 @@ func TestStoryMustLoop(t *testing.T) {
 
 	assertSameString(t, "step 1", str.RespondTo("s1"), "want response %q got %q")
 }
+
+func TestStoryI18N(t *testing.T) {
+	str := mesproc.NewStory().
+		I18n(mesproc.I18nMap{
+			"ru": {
+				mesproc.I18nLanguageChanged: "Язык изменен на русский",
+			},
+			"kk": {
+				mesproc.I18nLanguageChanged: "Язык изменен на казахский",
+			},
+		})
+
+	assertSameString(t, "Язык изменен на русский", str.RespondTo("/ru"), "want language message %q, got %q")
+	assertSameString(t, "Язык изменен на казахский", str.RespondTo("/kk"), "want language message %q, got %q")
+	assertSameString(t, mesproc.I18nLanguageChanged, str.RespondTo("/en"), "want language message %q, got %q")
+}
+
+func TestRepeatPrevStepWhenChangingLanguage(t *testing.T) {
+
+}
