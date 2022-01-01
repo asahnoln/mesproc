@@ -54,5 +54,5 @@ func TestStoryMustLoop(t *testing.T) {
 	str.RespondTo("s2")
 	str.RespondTo("s3")
 
-	assertSameString(t, "step 1", str.Step().Response(), "want response %q got %q")
+	assertSameString(t, "step 1", str.RespondTo("s1"), "want response %q got %q")
 }

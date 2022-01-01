@@ -21,14 +21,14 @@ func (s *Story) Add(step *Step) *Story {
 }
 
 func (s *Story) Step() *Step {
-	if s.curStep == len(s.steps) {
-		s.curStep = 0
-	}
-
 	return s.steps[s.curStep]
 }
 
 func (s *Story) RespondTo(m string) string {
+	if s.curStep == len(s.steps) {
+		s.curStep = 0
+	}
+
 	step := s.steps[s.curStep]
 	if step.expectation == m {
 		s.curStep++
