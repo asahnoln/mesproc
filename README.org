@@ -10,6 +10,10 @@ This one follows the script - what to receive and how to respond to given messag
 *** DONE Different users - different users have different expectations - steps in stories
 Just create a story each time again
 *** DONE Handle story ending - looping
-*** TODO Different responses to the same request according to set parameters (language)
+*** DONE Different responses to the same request according to set parameters (language)
 *** TODO Different responses to old requests according to current step in the story
+*** TODO Send back previous step when changing language
+*** TODO Sending audio files as answer
+*** TODO Sending several messages
+*** TODO Saving user responses
 *** TODO Test for json tags?

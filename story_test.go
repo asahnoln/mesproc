@@ -73,6 +73,24 @@ func TestStoryI18N(t *testing.T) {
 	assertSameString(t, mesproc.I18nLanguageChanged, str.RespondTo("/en"), "want language message %q, got %q")
 }
 
-func TestRepeatPrevStepWhenChangingLanguage(t *testing.T) {
+func TestSettingLanguageChangesMessage(t *testing.T) {
+	str := mesproc.NewStory().
+		Add(mesproc.NewStep().Expect("step 1").Respond("story 1").Fail("please write step 1")).
+		Add(mesproc.NewStep().Expect("step 2").Respond("story 2").Fail("please write step 2")).
+		Add(mesproc.NewStep().Expect("step 3").Respond("story 3").Fail("please write step 3")).
+		I18n(mesproc.I18nMap{
+			"ru": {
+				"step 1":  "шаг 1",
+				"story 1": "история 1",
+				"step 2":  "шаг 2",
+			},
+		})
 
+	str = str.SetLanguage("ru")
+
+	assertSameString(t, "ru", str.Language(), "want language %q, got %q")
+	assertSameString(t, "история 1", str.RespondTo("шаг 1"), "want i18n response %q, got %q")
+
+	// Default line should come out if there is no i18n
+	assertSameString(t, "story 2", str.RespondTo("шаг 2"), "want i18n default response %q, got %q")
 }

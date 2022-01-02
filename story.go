@@ -12,6 +12,7 @@ type Story struct {
 	steps   []*Step
 	curStep int
 	i18n    I18nMap
+	lang    string
 }
 
 type Step struct {
@@ -47,6 +48,15 @@ func (s *Story) I18n(i I18nMap) *Story {
 	return s
 }
 
+func (s *Story) Language() string {
+	return s.lang
+}
+
+func (s *Story) SetLanguage(l string) *Story {
+	s.lang = l
+	return s
+}
+
 func (s *Story) checkCurrentStep() {
 	if s.curStep == len(s.steps) {
 		s.curStep = 0
@@ -55,12 +65,25 @@ func (s *Story) checkCurrentStep() {
 
 func (s *Story) stepResponseOrFail(m string) string {
 	step := s.steps[s.curStep]
-	if step.expectation == m {
+	expectation := s.getI18nLine(step.expectation)
+
+	if expectation == m {
 		s.curStep++
-		return step.response
+		return s.getI18nLine(step.response)
 	}
 
 	return step.failMessage
+}
+
+func (s *Story) getI18nLine(l string) string {
+	if s.lang != "" {
+		r, ok := s.i18n[s.lang][l]
+		if ok {
+			l = r
+		}
+	}
+
+	return l
 }
 
 func (s *Story) parseI18nCommand(m string) (string, bool) {
