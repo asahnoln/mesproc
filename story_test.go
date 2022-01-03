@@ -86,7 +86,7 @@ func TestSettingLanguageChangesMessage(t *testing.T) {
 			},
 		})
 
-	str = str.SetLanguage("ru")
+	str.RespondTo("/ru")
 
 	assertSameString(t, "ru", str.Language(), "want language %q, got %q")
 	assertSameString(t, "история 1", str.RespondTo("шаг 1"), "want i18n response %q, got %q")

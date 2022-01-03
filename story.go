@@ -87,12 +87,8 @@ func (s *Story) getI18nLine(l string) string {
 }
 
 func (s *Story) parseI18nCommand(m string) (string, bool) {
-	var (
-		response string
-		ok       bool
-	)
 	if !strings.HasPrefix(m, "/") {
-		return response, ok
+		return "", false
 	}
 
 	c := m[1:]
@@ -101,6 +97,7 @@ func (s *Story) parseI18nCommand(m string) (string, bool) {
 	}
 
 	if lines, ok := s.i18n[c]; ok {
+		s.SetLanguage(c)
 		return lines[I18nLanguageChanged], true
 	}
 
