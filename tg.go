@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 type TgUpdate struct {
@@ -24,10 +25,21 @@ type TgSendMessage struct {
 	Text   string `json:"text"`
 }
 
+type TgSendAudio struct {
+	ChatID int    `json:"chat_id"`
+	Audio  string `json:"audio"`
+}
+
 type TgHandler struct {
 	target     string
 	lastChatID int
 	str        *Story
+}
+
+type TgSender interface {
+	SetChatID(int)
+	SetContent(string)
+	URL() string
 }
 
 func NewTgHandler(target string, str *Story) *TgHandler {
@@ -42,9 +54,46 @@ func (h *TgHandler) Receive(w http.ResponseWriter, r *http.Request) string {
 }
 
 func (h *TgHandler) Send(message string) {
-	m, _ := json.Marshal(TgSendMessage{
-		ChatID: h.lastChatID,
-		Text:   h.str.RespondTo(message),
-	})
-	http.Post(h.target+"/sendMessage", "application/json", bytes.NewReader(m))
+	v := figureSenderType(h.str.RespondTo(message))
+	v.SetChatID(h.lastChatID)
+
+	m, _ := json.Marshal(v)
+
+	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+}
+
+func figureSenderType(text string) TgSender {
+	var v TgSender = &TgSendMessage{}
+	if strings.HasPrefix(text, "audio:") {
+		v = &TgSendAudio{}
+		text = text[6:]
+	}
+
+	v.SetContent(text)
+
+	return v
+}
+
+func (s *TgSendAudio) SetChatID(i int) {
+	s.ChatID = i
+}
+
+func (s *TgSendAudio) SetContent(a string) {
+	s.Audio = a
+}
+
+func (s *TgSendAudio) URL() string {
+	return "/sendAudio"
+}
+
+func (s *TgSendMessage) SetChatID(i int) {
+	s.ChatID = i
+}
+
+func (s *TgSendMessage) SetContent(a string) {
+	s.Text = a
+}
+
+func (s *TgSendMessage) URL() string {
+	return "/sendMessage"
 }

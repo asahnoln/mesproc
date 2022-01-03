@@ -3,7 +3,7 @@ package mesproc
 import "strings"
 
 const (
-	I18nLanguageChanged = "Language changed to English"
+	I18nLanguageChanged = "Language changed"
 )
 
 type I18nMap map[string]map[string]string
