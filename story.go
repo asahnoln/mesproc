@@ -65,14 +65,16 @@ func (s *Story) checkCurrentStep() {
 
 func (s *Story) stepResponseOrFail(m string) string {
 	step := s.steps[s.curStep]
-	expectation := s.getI18nLine(step.expectation)
 
-	if expectation == m {
+	var response string
+	if s.getI18nLine(step.expectation) == m {
 		s.curStep++
-		return s.getI18nLine(step.response)
+		response = step.response
+	} else {
+		response = step.failMessage
 	}
 
-	return s.getI18nLine(step.failMessage)
+	return s.getI18nLine(response)
 }
 
 func (s *Story) getI18nLine(l string) string {
