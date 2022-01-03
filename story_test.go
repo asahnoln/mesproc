@@ -80,9 +80,10 @@ func TestSettingLanguageChangesMessage(t *testing.T) {
 		Add(mesproc.NewStep().Expect("step 3").Respond("story 3").Fail("please write step 3")).
 		I18n(mesproc.I18nMap{
 			"ru": {
-				"step 1":  "шаг 1",
-				"story 1": "история 1",
-				"step 2":  "шаг 2",
+				"step 1":              "шаг 1",
+				"story 1":             "история 1",
+				"step 2":              "шаг 2",
+				"please write step 3": "введите шаг 3",
 			},
 		})
 
@@ -93,4 +94,6 @@ func TestSettingLanguageChangesMessage(t *testing.T) {
 
 	// Default line should come out if there is no i18n
 	assertSameString(t, "story 2", str.RespondTo("шаг 2"), "want i18n default response %q, got %q")
+
+	assertSameString(t, "введите шаг 3", str.RespondTo("wrong"), "want i18n fail response %q, got %q")
 }

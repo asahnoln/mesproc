@@ -72,7 +72,7 @@ func (s *Story) stepResponseOrFail(m string) string {
 		return s.getI18nLine(step.response)
 	}
 
-	return step.failMessage
+	return s.getI18nLine(step.failMessage)
 }
 
 func (s *Story) getI18nLine(l string) string {
