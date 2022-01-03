@@ -3,6 +3,7 @@ package tg_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,88 +20,69 @@ type stubTgServer struct {
 }
 
 func TestTgHandler(t *testing.T) {
+	tests := []struct {
+		responsePrefix string
+		want           string
+		tgServerTarget string
+	}{
+		{"", "standard response", "/sendMessage"},
+		{"audio:", "http://example.com/audio.mp3", "/sendAudio"},
+	}
+
 	stg := &stubTgServer{}
 	close, target := stg.tgServerMockURL()
 	defer close()
 
-	str := story.New().Add(
-		story.NewStep().Expect("want this").Respond("Ok you can want it"),
-	)
-	th := tg.New(target, str)
-	srv := mesproc.NewServer(th)
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q to %q", tt.want, tt.tgServerTarget), func(t *testing.T) {
+			str := story.New().Add(
+				story.NewStep().Expect("want this").Respond(tt.responsePrefix + tt.want),
+			)
+			th := tg.New(target, str)
+			srv := mesproc.NewServer(th)
 
-	update := tg.Update{
-		Message: tg.Message{
-			Chat: tg.Chat{
-				ID: 187,
-			},
-			Text: str.Step().Expectation(),
-		},
+			update := tg.Update{
+				Message: tg.Message{
+					Chat: tg.Chat{
+						ID: 187,
+					},
+					Text: str.Step().Expectation(),
+				},
+			}
+			body, _ := json.Marshal(&update)
+
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
+
+			srv.ServeHTTP(w, r)
+
+			test.AssertSameString(t, tt.tgServerTarget, stg.gotPath, "want tg service called path %q, got %q")
+			test.AssertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
+			test.AssertSameString(t, tt.want, stg.gotText, "want tg service receiving message %q, got %q")
+			test.AssertSameInt(t, update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
+		})
+
 	}
-	body, _ := json.Marshal(&update)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
-
-	// TODO: This returns different results depending on running Story.RespondTo
-	want := str.Step().Response()
-
-	srv.ServeHTTP(w, r)
-
-	test.AssertSameString(t, "/sendMessage", stg.gotPath, "want tg service called path %q, got %q")
-	test.AssertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
-	test.AssertSameString(t, want, stg.gotText, "want tg service receiving message %q, got %q")
-	test.AssertSameInt(t, update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
-}
-
-func TestTgSendAudio(t *testing.T) {
-	stg := &stubTgServer{}
-	close, target := stg.tgServerMockURL()
-	defer close()
-
-	want := "http://example.com/audio.mp3"
-	str := story.New().Add(
-		story.NewStep().Expect("want audio").Respond("audio:" + want),
-	)
-	th := tg.New(target, str)
-	srv := mesproc.NewServer(th)
-
-	update := tg.Update{
-		Message: tg.Message{
-			Chat: tg.Chat{
-				ID: 187,
-			},
-			Text: str.Step().Expectation(),
-		},
-	}
-	body, _ := json.Marshal(&update)
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
-
-	srv.ServeHTTP(w, r)
-
-	test.AssertSameString(t, "/sendAudio", stg.gotPath, "want tg service called path %q, got %q")
-	test.AssertSameString(t, want, stg.gotText, "want tg service receiving audio link %q, got %q")
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux := http.NewServeMux()
 		s.gotPath = r.URL.Path
+		fillData := func(id int, text string, r *http.Request) {
+			s.gotHeader = r.Header.Get("Content-Type")
+			s.gotChatID = id
+			s.gotText = text
+		}
 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendMessage
 			json.NewDecoder(r.Body).Decode(&m)
-			s.gotHeader = r.Header.Get("Content-Type")
-			s.gotText = m.Text
-			s.gotChatID = m.ChatID
+			fillData(m.ChatID, m.Text, r)
 		})
 		mux.HandleFunc("/sendAudio", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendAudio
 			json.NewDecoder(r.Body).Decode(&m)
-			s.gotHeader = r.Header.Get("Content-Type")
-			s.gotText = m.Audio
-			s.gotChatID = m.ChatID
+			fillData(m.ChatID, m.Audio, r)
 		})
 
 		mux.ServeHTTP(w, r)
