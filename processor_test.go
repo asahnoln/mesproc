@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/asahnoln/mesproc"
+	"github.com/asahnoln/mesproc/test"
 )
 
 const command = "/start"
@@ -21,24 +22,8 @@ func TestHandle(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"message": "`+command+`"}`))
 	srv.ServeHTTP(w, r)
 
-	assertSameString(t, "ok", w.Body.String(), "want response answer %q, got %q")
-	assertSameString(t, h.m[command], h.got, "want service receive message %q, got %q")
-}
-
-func assertSameString(t testing.TB, want, got, message string) {
-	t.Helper()
-
-	if want != got {
-		t.Errorf(message, want, got)
-	}
-}
-
-func assertSameInt(t testing.TB, want, got int, message string) {
-	t.Helper()
-
-	if want != got {
-		t.Errorf(message, want, got)
-	}
+	test.AssertSameString(t, "ok", w.Body.String(), "want response answer %q, got %q")
+	test.AssertSameString(t, h.m[command], h.got, "want service receive message %q, got %q")
 }
 
 func prepareHandler() *stubHandler {

@@ -1,4 +1,4 @@
-package mesproc_test
+package tg_test
 
 import (
 	"bytes"
@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/asahnoln/mesproc"
+	"github.com/asahnoln/mesproc/story"
+	"github.com/asahnoln/mesproc/test"
+	"github.com/asahnoln/mesproc/tg"
 )
 
 type stubTgServer struct {
@@ -20,15 +23,15 @@ func TestTgHandler(t *testing.T) {
 	close, target := stg.tgServerMockURL()
 	defer close()
 
-	str := mesproc.NewStory().Add(
-		mesproc.NewStep().Expect("want this").Respond("Ok you can want it"),
+	str := story.New().Add(
+		story.NewStep().Expect("want this").Respond("Ok you can want it"),
 	)
-	tg := mesproc.NewTgHandler(target, str)
-	srv := mesproc.NewServer(tg)
+	th := tg.NewTgHandler(target, str)
+	srv := mesproc.NewServer(th)
 
-	update := mesproc.TgUpdate{
-		Message: mesproc.TgMessage{
-			Chat: mesproc.TgChat{
+	update := tg.TgUpdate{
+		Message: tg.TgMessage{
+			Chat: tg.TgChat{
 				ID: 187,
 			},
 			Text: str.Step().Expectation(),
@@ -44,10 +47,10 @@ func TestTgHandler(t *testing.T) {
 
 	srv.ServeHTTP(w, r)
 
-	assertSameString(t, "/sendMessage", stg.gotPath, "want tg service called path %q, got %q")
-	assertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
-	assertSameString(t, want, stg.gotText, "want tg service receiving message %q, got %q")
-	assertSameInt(t, update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
+	test.AssertSameString(t, "/sendMessage", stg.gotPath, "want tg service called path %q, got %q")
+	test.AssertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
+	test.AssertSameString(t, want, stg.gotText, "want tg service receiving message %q, got %q")
+	test.AssertSameInt(t, update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
 }
 
 func TestTgSendAudio(t *testing.T) {
@@ -56,15 +59,15 @@ func TestTgSendAudio(t *testing.T) {
 	defer close()
 
 	want := "http://example.com/audio.mp3"
-	str := mesproc.NewStory().Add(
-		mesproc.NewStep().Expect("want audio").Respond("audio:" + want),
+	str := story.New().Add(
+		story.NewStep().Expect("want audio").Respond("audio:" + want),
 	)
-	tg := mesproc.NewTgHandler(target, str)
-	srv := mesproc.NewServer(tg)
+	th := tg.NewTgHandler(target, str)
+	srv := mesproc.NewServer(th)
 
-	update := mesproc.TgUpdate{
-		Message: mesproc.TgMessage{
-			Chat: mesproc.TgChat{
+	update := tg.TgUpdate{
+		Message: tg.TgMessage{
+			Chat: tg.TgChat{
 				ID: 187,
 			},
 			Text: str.Step().Expectation(),
@@ -77,8 +80,8 @@ func TestTgSendAudio(t *testing.T) {
 
 	srv.ServeHTTP(w, r)
 
-	assertSameString(t, "/sendAudio", stg.gotPath, "want tg service called path %q, got %q")
-	assertSameString(t, want, stg.gotText, "want tg service receiving audio link %q, got %q")
+	test.AssertSameString(t, "/sendAudio", stg.gotPath, "want tg service called path %q, got %q")
+	test.AssertSameString(t, want, stg.gotText, "want tg service receiving audio link %q, got %q")
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
@@ -86,14 +89,14 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 		mux := http.NewServeMux()
 		s.gotPath = r.URL.Path
 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
-			var m mesproc.TgSendMessage
+			var m tg.TgSendMessage
 			json.NewDecoder(r.Body).Decode(&m)
 			s.gotHeader = r.Header.Get("Content-Type")
 			s.gotText = m.Text
 			s.gotChatID = m.ChatID
 		})
 		mux.HandleFunc("/sendAudio", func(w http.ResponseWriter, r *http.Request) {
-			var m mesproc.TgSendAudio
+			var m tg.TgSendAudio
 			json.NewDecoder(r.Body).Decode(&m)
 			s.gotHeader = r.Header.Get("Content-Type")
 			s.gotText = m.Audio

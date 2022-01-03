@@ -6,23 +6,25 @@ import (
 	"os"
 
 	"github.com/asahnoln/mesproc"
+	"github.com/asahnoln/mesproc/story"
+	"github.com/asahnoln/mesproc/tg"
 )
 
-func story() *mesproc.Story {
-	return mesproc.NewStory().
-		Add(mesproc.NewStep().
+func createStory() *story.Story {
+	return story.New().
+		Add(story.NewStep().
 			Expect("sector 1").
 			Respond("move on to next sector").
 			Fail(`Enter "sector 1"`)).
-		Add(mesproc.NewStep().
+		Add(story.NewStep().
 			Expect("sector 2").
 			Respond("audio:http://asabalar.kz/kazakhstan.mp3").
 			Fail(`Enter "sector 2"`)).
-		Add(mesproc.NewStep().
+		Add(story.NewStep().
 			Expect("lulz").
 			Respond("finish here").
 			Fail(`Enter "lulz"`)).
-		I18n(mesproc.I18nMap{
+		I18n(story.I18nMap{
 			"ru": {
 				"sector 1":               "сектор 1",
 				"sector 2":               "сектор 2",
@@ -42,8 +44,8 @@ func story() *mesproc.Story {
 }
 
 func main() {
-	tg := mesproc.NewTgHandler(os.Getenv("BOT_ADDR"), story())
-	srv := mesproc.NewServer(tg)
+	th := tg.NewTgHandler(os.Getenv("BOT_ADDR"), createStory())
+	srv := mesproc.NewServer(th)
 
 	log.Fatalln(http.ListenAndServeTLS(
 		os.Getenv("SRV_PORT"), os.Getenv("CERT_FILE"), os.Getenv("KEY_FILE"),

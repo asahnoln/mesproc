@@ -1,10 +1,12 @@
-package mesproc
+package tg
 
 import (
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"github.com/asahnoln/mesproc/story"
 )
 
 type TgUpdate struct {
@@ -33,7 +35,7 @@ type TgSendAudio struct {
 type TgHandler struct {
 	target     string
 	lastChatID int
-	str        *Story
+	str        *story.Story
 }
 
 type TgSender interface {
@@ -42,7 +44,7 @@ type TgSender interface {
 	URL() string
 }
 
-func NewTgHandler(target string, str *Story) *TgHandler {
+func NewTgHandler(target string, str *story.Story) *TgHandler {
 	return &TgHandler{target: target, str: str}
 }
 

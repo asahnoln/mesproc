@@ -1,4 +1,4 @@
-package mesproc
+package story
 
 import "strings"
 
@@ -15,13 +15,7 @@ type Story struct {
 	lang    string
 }
 
-type Step struct {
-	expectation string
-	response    string
-	failMessage string
-}
-
-func NewStory() *Story {
+func New() *Story {
 	return &Story{}
 }
 
@@ -104,35 +98,4 @@ func (s *Story) parseI18nCommand(m string) (string, bool) {
 	}
 
 	return "", false
-}
-
-func NewStep() *Step {
-	return &Step{}
-}
-
-func (s *Step) Expect(e string) *Step {
-	s.expectation = e
-	return s
-}
-
-func (s *Step) Respond(r string) *Step {
-	s.response = r
-	return s
-}
-
-func (s *Step) Expectation() string {
-	return s.expectation
-}
-
-func (s *Step) Response() string {
-	return s.response
-}
-
-func (s *Step) Fail(e string) *Step {
-	s.failMessage = e
-	return s
-}
-
-func (s *Step) FailMessage() string {
-	return s.failMessage
 }
