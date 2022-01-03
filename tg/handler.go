@@ -9,53 +9,53 @@ import (
 	"github.com/asahnoln/mesproc/story"
 )
 
-type TgUpdate struct {
-	Message TgMessage
+type Update struct {
+	Message Message
 }
 
-type TgChat struct {
+type Chat struct {
 	ID int
 }
 
-type TgMessage struct {
-	Chat TgChat
+type Message struct {
+	Chat Chat
 	Text string
 }
 
-type TgSendMessage struct {
+type SendMessage struct {
 	ChatID int    `json:"chat_id"`
 	Text   string `json:"text"`
 }
 
-type TgSendAudio struct {
+type SendAudio struct {
 	ChatID int    `json:"chat_id"`
 	Audio  string `json:"audio"`
 }
 
-type TgHandler struct {
+type Handler struct {
 	target     string
 	lastChatID int
 	str        *story.Story
 }
 
-type TgSender interface {
+type Sender interface {
 	SetChatID(int)
 	SetContent(string)
 	URL() string
 }
 
-func NewTgHandler(target string, str *story.Story) *TgHandler {
-	return &TgHandler{target: target, str: str}
+func New(target string, str *story.Story) *Handler {
+	return &Handler{target: target, str: str}
 }
 
-func (h *TgHandler) Receive(w http.ResponseWriter, r *http.Request) string {
-	var u TgUpdate
+func (h *Handler) Receive(w http.ResponseWriter, r *http.Request) string {
+	var u Update
 	_ = json.NewDecoder(r.Body).Decode(&u)
 	h.lastChatID = u.Message.Chat.ID
 	return u.Message.Text
 }
 
-func (h *TgHandler) Send(message string) {
+func (h *Handler) Send(message string) {
 	v := figureSenderType(h.str.RespondTo(message))
 	v.SetChatID(h.lastChatID)
 
@@ -64,10 +64,10 @@ func (h *TgHandler) Send(message string) {
 	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 }
 
-func figureSenderType(text string) TgSender {
-	var v TgSender = &TgSendMessage{}
+func figureSenderType(text string) Sender {
+	var v Sender = &SendMessage{}
 	if strings.HasPrefix(text, "audio:") {
-		v = &TgSendAudio{}
+		v = &SendAudio{}
 		text = text[6:]
 	}
 
@@ -76,26 +76,26 @@ func figureSenderType(text string) TgSender {
 	return v
 }
 
-func (s *TgSendAudio) SetChatID(i int) {
+func (s *SendAudio) SetChatID(i int) {
 	s.ChatID = i
 }
 
-func (s *TgSendAudio) SetContent(a string) {
+func (s *SendAudio) SetContent(a string) {
 	s.Audio = a
 }
 
-func (s *TgSendAudio) URL() string {
+func (s *SendAudio) URL() string {
 	return "/sendAudio"
 }
 
-func (s *TgSendMessage) SetChatID(i int) {
+func (s *SendMessage) SetChatID(i int) {
 	s.ChatID = i
 }
 
-func (s *TgSendMessage) SetContent(a string) {
+func (s *SendMessage) SetContent(a string) {
 	s.Text = a
 }
 
-func (s *TgSendMessage) URL() string {
+func (s *SendMessage) URL() string {
 	return "/sendMessage"
 }

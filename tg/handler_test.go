@@ -26,12 +26,12 @@ func TestTgHandler(t *testing.T) {
 	str := story.New().Add(
 		story.NewStep().Expect("want this").Respond("Ok you can want it"),
 	)
-	th := tg.NewTgHandler(target, str)
+	th := tg.New(target, str)
 	srv := mesproc.NewServer(th)
 
-	update := tg.TgUpdate{
-		Message: tg.TgMessage{
-			Chat: tg.TgChat{
+	update := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
 				ID: 187,
 			},
 			Text: str.Step().Expectation(),
@@ -62,12 +62,12 @@ func TestTgSendAudio(t *testing.T) {
 	str := story.New().Add(
 		story.NewStep().Expect("want audio").Respond("audio:" + want),
 	)
-	th := tg.NewTgHandler(target, str)
+	th := tg.New(target, str)
 	srv := mesproc.NewServer(th)
 
-	update := tg.TgUpdate{
-		Message: tg.TgMessage{
-			Chat: tg.TgChat{
+	update := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
 				ID: 187,
 			},
 			Text: str.Step().Expectation(),
@@ -89,14 +89,14 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 		mux := http.NewServeMux()
 		s.gotPath = r.URL.Path
 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
-			var m tg.TgSendMessage
+			var m tg.SendMessage
 			json.NewDecoder(r.Body).Decode(&m)
 			s.gotHeader = r.Header.Get("Content-Type")
 			s.gotText = m.Text
 			s.gotChatID = m.ChatID
 		})
 		mux.HandleFunc("/sendAudio", func(w http.ResponseWriter, r *http.Request) {
-			var m tg.TgSendAudio
+			var m tg.SendAudio
 			json.NewDecoder(r.Body).Decode(&m)
 			s.gotHeader = r.Header.Get("Content-Type")
 			s.gotText = m.Audio

@@ -44,7 +44,7 @@ func createStory() *story.Story {
 }
 
 func main() {
-	th := tg.NewTgHandler(os.Getenv("BOT_ADDR"), createStory())
+	th := tg.New(os.Getenv("BOT_ADDR"), createStory())
 	srv := mesproc.NewServer(th)
 
 	log.Fatalln(http.ListenAndServeTLS(
