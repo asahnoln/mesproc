@@ -13,6 +13,7 @@ Just create a story each time again
 *** DONE Different responses to the same request according to set parameters (language)
 *** DONE Sending audio files as answer
 *** DONE Story expecting geo location
+*** TODO Send default "Language changed" in English when no i18n set
 *** TODO Checking for geo location in Tg
 *** TODO Use JSON file to build a story
 *** TODO Saving user responses
