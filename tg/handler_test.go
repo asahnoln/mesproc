@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/asahnoln/mesproc/story"
@@ -20,12 +21,41 @@ type stubTgServer struct {
 
 func TestHandler(t *testing.T) {
 	tests := []struct {
-		responsePrefix string
-		want           string
+		step           *story.Step
+		update         tg.Update
 		tgServerTarget string
 	}{
-		{"", "standard response", "/sendMessage"},
-		{tg.PREFIX_AUDIO, "http://example.com/audio.mp3", "/sendAudio"},
+		{story.NewStep().Expect("want this").Respond("standard respond"),
+			tg.Update{
+				Message: tg.Message{
+					Chat: tg.Chat{
+						ID: 101,
+					},
+					Text: "want this",
+				},
+			}, "/sendMessage"},
+		{story.NewStep().Expect("want audio").Respond("audio:http://example.com/audio.mp3"),
+			tg.Update{
+				Message: tg.Message{
+					Chat: tg.Chat{
+						ID: 187,
+					},
+					Text: "want audio",
+				},
+			}, "/sendAudio"},
+		{story.NewStep().ExpectGeo(43, 75, 0).Respond("good").Fail("not good"),
+			tg.Update{
+				Message: tg.Message{
+					Chat: tg.Chat{
+						ID: 11,
+					},
+					Location: &tg.Location{
+						Latitude:  43,
+						Longitude: 75,
+					},
+				},
+			}, "/sendMessage",
+		},
 	}
 
 	stg := &stubTgServer{}
@@ -33,21 +63,11 @@ func TestHandler(t *testing.T) {
 	defer close()
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%q to %q", tt.want, tt.tgServerTarget), func(t *testing.T) {
-			str := story.New().Add(
-				story.NewStep().Expect("want this").Respond(tt.responsePrefix + tt.want),
-			)
+		t.Run(fmt.Sprintf("%q to %q", tt.step.Response(), tt.tgServerTarget), func(t *testing.T) {
+			str := story.New().Add(tt.step)
 			th := tg.New(target, str)
 
-			update := tg.Update{
-				Message: tg.Message{
-					Chat: tg.Chat{
-						ID: 187,
-					},
-					Text: str.Step().Expectation(),
-				},
-			}
-			body, _ := json.Marshal(&update)
+			body, _ := json.Marshal(&tt.update)
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
@@ -56,42 +76,11 @@ func TestHandler(t *testing.T) {
 
 			test.AssertSameString(t, tt.tgServerTarget, stg.gotPath, "want tg service called path %q, got %q")
 			test.AssertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
-			test.AssertSameString(t, tt.want, stg.gotText, "want tg service receiving message %q, got %q")
-			test.AssertSameInt(t, update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
+			test.AssertSameString(t, strings.TrimPrefix(tt.step.Response(), tg.PREFIX_AUDIO), stg.gotText, "want tg service receiving message %q, got %q")
+			test.AssertSameInt(t, tt.update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
 		})
 
 	}
-}
-
-func TestGeo(t *testing.T) {
-	stg := &stubTgServer{}
-	close, target := stg.tgServerMockURL()
-	defer close()
-
-	th := tg.New(target,
-		story.New().Add(
-			story.NewStep().ExpectGeo(43, 75, 0).Respond("good").Fail("not good")))
-
-	u := tg.Update{
-		Message: tg.Message{
-			Chat: tg.Chat{
-				ID: 11,
-			},
-			Location: &tg.Location{
-				Latitude:  43,
-				Longitude: 75,
-			},
-		},
-	}
-
-	body, _ := json.Marshal(u)
-
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
-
-	th.ServeHTTP(rec, req)
-
-	test.AssertSameString(t, "good", stg.gotText, "want tg service receiving message %q, got %q")
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
