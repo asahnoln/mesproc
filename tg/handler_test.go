@@ -25,7 +25,7 @@ func TestHandler(t *testing.T) {
 		tgServerTarget string
 	}{
 		{"", "standard response", "/sendMessage"},
-		{"audio:", "http://example.com/audio.mp3", "/sendAudio"},
+		{tg.PREFIX_AUDIO, "http://example.com/audio.mp3", "/sendAudio"},
 	}
 
 	stg := &stubTgServer{}

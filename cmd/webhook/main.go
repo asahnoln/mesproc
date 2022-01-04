@@ -12,12 +12,16 @@ import (
 func createStory() *story.Story {
 	return story.New().
 		Add(story.NewStep().
+			ExpectGeo(43.257169, 76.924515, 50).
+			Respond("Correct location, now enter sector number").
+			Fail("Wrong location")).
+		Add(story.NewStep().
 			Expect("sector 1").
 			Respond("move on to next sector").
 			Fail(`Enter "sector 1"`)).
 		Add(story.NewStep().
 			Expect("sector 2").
-			Respond("audio:http://asabalar.kz/kazakhstan.mp3").
+			Respond(tg.PREFIX_AUDIO + "http://asabalar.kz/kazakhstan.mp3").
 			Fail(`Enter "sector 2"`)).
 		Add(story.NewStep().
 			Expect("lulz").
@@ -31,12 +35,16 @@ func createStory() *story.Story {
 				`Enter "sector 1"`:       `Введите "сектор 1"`,
 				`Enter "sector 2"`:       `Введите "сектор 2"`,
 				`Enter "lulz"`:           `Введите "lulz"`,
+				"Correct location, now enter sector number": "Правильная локация, теперь введите сектор",
+				"Wrong location": "Неправильная локация",
 			},
 			"kk": {
-				"sector 1":               "кз сектор 1",
-				"sector 2":               "кз сектор 2",
+				"sector 1":               "сектор 1",
+				"sector 2":               "сектор 2",
 				"move on to next sector": "кз идите в следующий сектор",
 				`Enter "sector 2"`:       `кз Введите "сектор 2"`,
+				"Correct location, now enter sector number": "kz Правильная локация, теперь введите сектор",
+				"Wrong location": "кз Неправильная локация",
 			},
 		})
 }
