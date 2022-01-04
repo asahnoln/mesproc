@@ -58,17 +58,23 @@ func (s *Story) checkCurrentStep() {
 }
 
 func (s *Story) stepResponseOrFail(m string) string {
-	step := s.steps[s.curStep]
-
 	var response string
-	if s.getI18nLine(step.expectation) == m {
+	if s.isExpectationCorrect(m) {
+		response = s.Step().response
 		s.curStep++
-		response = step.response
 	} else {
-		response = step.failMessage
+		response = s.Step().failMessage
 	}
 
 	return s.getI18nLine(response)
+}
+
+func (s *Story) isExpectationCorrect(m string) bool {
+	if !s.Step().isGeo {
+		return s.getI18nLine(s.Step().expectation) == m
+	}
+
+	return s.Step().checkGeo(m)
 }
 
 func (s *Story) getI18nLine(l string) string {

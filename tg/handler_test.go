@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/asahnoln/mesproc"
 	"github.com/asahnoln/mesproc/story"
 	"github.com/asahnoln/mesproc/test"
 	"github.com/asahnoln/mesproc/tg"
@@ -19,7 +18,7 @@ type stubTgServer struct {
 	gotChatID                   int
 }
 
-func TestTgHandler(t *testing.T) {
+func TestHandler(t *testing.T) {
 	tests := []struct {
 		responsePrefix string
 		want           string
@@ -39,7 +38,6 @@ func TestTgHandler(t *testing.T) {
 				story.NewStep().Expect("want this").Respond(tt.responsePrefix + tt.want),
 			)
 			th := tg.New(target, str)
-			srv := mesproc.NewServer(th)
 
 			update := tg.Update{
 				Message: tg.Message{
@@ -54,7 +52,7 @@ func TestTgHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
 
-			srv.ServeHTTP(w, r)
+			th.ServeHTTP(w, r)
 
 			test.AssertSameString(t, tt.tgServerTarget, stg.gotPath, "want tg service called path %q, got %q")
 			test.AssertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
