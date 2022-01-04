@@ -63,6 +63,37 @@ func TestHandler(t *testing.T) {
 	}
 }
 
+func TestGeo(t *testing.T) {
+	stg := &stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	th := tg.New(target,
+		story.New().Add(
+			story.NewStep().ExpectGeo(43, 75, 0).Respond("good").Fail("not good")))
+
+	u := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 11,
+			},
+			Location: &tg.Location{
+				Latitude:  43,
+				Longitude: 75,
+			},
+		},
+	}
+
+	body, _ := json.Marshal(u)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
+
+	th.ServeHTTP(rec, req)
+
+	test.AssertSameString(t, "good", stg.gotText, "want tg service receiving message %q, got %q")
+}
+
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux := http.NewServeMux()
