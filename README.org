@@ -11,10 +11,11 @@ This one follows the script - what to receive and how to respond to given messag
 Just create a story each time again
 *** DONE Handle story ending - looping
 *** DONE Different responses to the same request according to set parameters (language)
-*** TODO Checking for geo location
-*** TODO Different responses to old requests according to current step in the story
-*** TODO Send back previous step when changing language
+*** DONE Checking for geo location
 *** DONE Sending audio files as answer
-*** TODO Sending several messages
+*** TODO Use JSON file to build a story
 *** TODO Saving user responses
+*** TODO Send back previous step when changing language
+*** TODO Different responses to old requests according to current step in the story
+*** TODO Sending several messages
 *** TODO Test for json tags?
