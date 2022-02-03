@@ -17,8 +17,9 @@ const (
 
 // Handler is a Telegram handler, which implements receiving messages from a bot and sending them back
 type Handler struct {
-	target string
-	str    *story.Story
+	target   string
+	str      *story.Story
+	usrSteps map[int]int
 }
 
 // Sender is an interface for different sending options, like sendMessage, sendAudio etc.
@@ -46,8 +47,9 @@ func (h *Handler) receive(w http.ResponseWriter, r *http.Request) Update {
 
 // send sends back a Sender
 func (h *Handler) send(u Update) {
-	v := figureSenderType(h.str.RespondTo(convertText(u)))
-	v.SetChatID(u.Message.Chat.ID)
+	id := u.Message.Chat.ID
+	v := figureSenderType(h.str.RespondWithStepTo(h.usrSteps[id], convertText(u)))
+	v.SetChatID(id)
 
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
@@ -74,7 +76,7 @@ func figureSenderType(text string) Sender {
 	var v Sender = &SendMessage{}
 	if strings.HasPrefix(text, PREFIX_AUDIO) {
 		v = &SendAudio{}
-		text = text[6:]
+		text = text[len(PREFIX_AUDIO):]
 	}
 
 	v.SetContent(text)

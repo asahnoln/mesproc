@@ -87,3 +87,17 @@ func TestSettingLanguageChangesMessage(t *testing.T) {
 
 	test.AssertSameString(t, "введите шаг 3", str.RespondTo("wrong"), "want i18n fail response %q, got %q")
 }
+
+func TestRespondToSpecificStep(t *testing.T) {
+	str := story.New().
+		Add(story.NewStep().Expect("step 1").Respond("go to step 2").Fail("still step 1")).
+		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2"))
+
+	t.Run("doesn't affect current step of story", func(t *testing.T) {
+		test.AssertSameString(t, "finish", str.RespondWithStepTo(1, "step 2"), "want response %q, got %q")
+
+		// Assert that function didn't advacne current step
+		test.AssertSameString(t, "step 1", str.Step().Expectation(), "want current step response %q, got %q")
+	})
+
+}

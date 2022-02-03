@@ -34,7 +34,11 @@ func (s *Story) RespondTo(m string) string {
 	}
 
 	s.checkCurrentStep()
-	return s.stepResponseOrFail(m)
+	return s.stepResponseOrFail(m, s.curStep, true)
+}
+
+func (s *Story) RespondWithStepTo(stp int, m string) string {
+	return s.stepResponseOrFail(m, stp, false)
 }
 
 func (s *Story) I18n(i I18nMap) *Story {
@@ -57,21 +61,24 @@ func (s *Story) checkCurrentStep() {
 	}
 }
 
-func (s *Story) stepResponseOrFail(m string) string {
+func (s *Story) stepResponseOrFail(m string, stp int, incCurStep bool) string {
 	var response string
-	if s.isExpectationCorrect(m) {
-		response = s.Step().response
-		s.curStep++
+	step := s.steps[stp]
+	if s.isExpectationCorrect(m, step) {
+		response = step.response
+		if incCurStep {
+			s.curStep++
+		}
 	} else {
-		response = s.Step().failMessage
+		response = step.failMessage
 	}
 
 	return s.getI18nLine(response)
 }
 
-func (s *Story) isExpectationCorrect(m string) bool {
+func (s *Story) isExpectationCorrect(m string, stp *Step) bool {
 	if !s.Step().isGeo {
-		return s.getI18nLine(s.Step().expectation) == m
+		return s.getI18nLine(stp.expectation) == m
 	}
 
 	return s.Step().checkGeo(m)

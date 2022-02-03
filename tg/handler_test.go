@@ -83,6 +83,44 @@ func TestHandler(t *testing.T) {
 	}
 }
 
+func TestDifferentUsersSteps(t *testing.T) {
+	str := story.New().
+		Add(story.NewStep().Expect("step 1").Respond("go to step 2").Fail("still step 1")).
+		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2"))
+
+	stg := &stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	th := tg.New(target, str)
+
+	body, _ := json.Marshal(tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 1,
+			},
+			Text: "step 1",
+		},
+	})
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+	test.AssertSameString(t, "go to step 2", stg.gotText, "want response for user 1 %q, got %q")
+
+	body, _ = json.Marshal(tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 2,
+			},
+			Text: "wrong step",
+		},
+	})
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+	test.AssertSameString(t, "still step 1", stg.gotText, "want response for user 2 %q, got %q")
+}
+
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux := http.NewServeMux()
