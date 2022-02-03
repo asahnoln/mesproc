@@ -33,12 +33,17 @@ func (s *Story) RespondTo(m string) string {
 		return response
 	}
 
-	s.checkCurrentStep()
-	return s.stepResponseOrFail(m, s.curStep, true)
+	r, ok := s.stepResponseOrFail(m, s.curStep)
+	if ok {
+		s.curStep = s.rotateStep(s.curStep + 1)
+	}
+
+	return r
 }
 
 func (s *Story) RespondWithStepTo(stp int, m string) string {
-	return s.stepResponseOrFail(m, stp, false)
+	r, _ := s.stepResponseOrFail(m, s.rotateStep(stp))
+	return r
 }
 
 func (s *Story) I18n(i I18nMap) *Story {
@@ -55,25 +60,26 @@ func (s *Story) SetLanguage(l string) *Story {
 	return s
 }
 
-func (s *Story) checkCurrentStep() {
-	if s.curStep == len(s.steps) {
-		s.curStep = 0
-	}
+func (s *Story) rotateCurrentStep() {
 }
 
-func (s *Story) stepResponseOrFail(m string, stp int, incCurStep bool) string {
+func (s *Story) rotateStep(stp int) int {
+	return stp % len(s.steps)
+}
+
+func (s *Story) stepResponseOrFail(m string, stp int) (string, bool) {
 	var response string
+	var ok bool
 	step := s.steps[stp]
+
 	if s.isExpectationCorrect(m, step) {
+		ok = true
 		response = step.response
-		if incCurStep {
-			s.curStep++
-		}
 	} else {
 		response = step.failMessage
 	}
 
-	return s.getI18nLine(response)
+	return s.getI18nLine(response), ok
 }
 
 func (s *Story) isExpectationCorrect(m string, stp *Step) bool {

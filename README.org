@@ -8,7 +8,7 @@ This one follows the script - what to receive and how to respond to given messag
 *** DONE Respond with different messages to different messages
 *** DONE Expectations - expect specific messages after other messages
 *** DONE Different users - different users have different expectations - steps in stories
-*** TODO Out of range steps - rotate them
+*** DONE Out of range steps - rotate them
 *** DONE Handle story ending - looping
 *** DONE Different responses to the same request according to set parameters (language)
 *** DONE Sending audio files as answer

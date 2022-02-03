@@ -100,4 +100,8 @@ func TestRespondToSpecificStep(t *testing.T) {
 		test.AssertSameString(t, "step 1", str.Step().Expectation(), "want current step response %q, got %q")
 	})
 
+	t.Run("step rotates if out of range", func(t *testing.T) {
+		test.AssertSameString(t, "go to step 2", str.RespondWithStepTo(2, "step 1"), "want response %q, got %q")
+		test.AssertSameString(t, "still step 2", str.RespondWithStepTo(3, "wrong step"), "want response %q, got %q")
+	})
 }
