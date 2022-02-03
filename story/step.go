@@ -5,6 +5,9 @@ import (
 	"math"
 )
 
+// Step is a building block of a story.
+// It holds information on what message it expects from the user to advance the story
+// and how it would respond to proper or a wrong message.
 type Step struct {
 	expectation string
 	response    string
@@ -13,37 +16,45 @@ type Step struct {
 	geoExp      [3]float64
 }
 
+// NewStep returns a new Step
 func NewStep() *Step {
 	return &Step{}
 }
 
+// Expectation returns expected message to advance the story.
 func (s *Step) Expectation() string {
 	return s.expectation
 }
 
+// Response returns response of the Step
 func (s *Step) Response() string {
 	return s.response
 }
 
+// FailMessage returns a fail message which is given when given message is not what expected.
 func (s *Step) FailMessage() string {
 	return s.failMessage
 }
 
+// Expect sets expected message for the Step
 func (s *Step) Expect(e string) *Step {
 	s.expectation = e
 	return s
 }
 
+// Respond sets response for the right message
 func (s *Step) Respond(r string) *Step {
 	s.response = r
 	return s
 }
 
+// Fail sets a fail message for the step which is returned when given input is not what expected in the step.
 func (s *Step) Fail(e string) *Step {
 	s.failMessage = e
 	return s
 }
 
+// ExpectGeo sets expectation for the step to be a geo location instead of plain text
 func (s *Step) ExpectGeo(lat, lon float64, precision float64) *Step {
 	s.isGeo = true
 	s.geoExp = [3]float64{lat, lon, precision}

@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	PREFIX_AUDIO = "audio:" // PREFIX_AUDIO identifies text as a sendAudio candidate
+	// PrefixAudio identifies text as a sendAudio candidate
+	PrefixAudio = "audio:"
 )
 
 // Handler is a Telegram handler, which implements receiving messages from a bot and sending them back
@@ -27,9 +28,9 @@ type Handler struct {
 // back to Telegram Bot API.
 // URL is used to receive correct endpoint for parcticular Sender.
 type Sender interface {
-	SetChatID(int)
-	SetContent(string)
-	URL() string
+	SetChatID(int)     // SetChatID sets chat ID for current sender
+	SetContent(string) // SetContent sets content for current sender
+	URL() string       // URL returns Telegram endpoint to process current sender
 }
 
 // New creates a Telegram handler.
@@ -74,9 +75,9 @@ func convertText(u Update) string {
 // figureSenderType uses received text as a way to figure out what should be sent back
 func figureSenderType(text string) Sender {
 	var v Sender = &SendMessage{}
-	if strings.HasPrefix(text, PREFIX_AUDIO) {
+	if strings.HasPrefix(text, PrefixAudio) {
 		v = &SendAudio{}
-		text = text[len(PREFIX_AUDIO):]
+		text = text[len(PrefixAudio):]
 	}
 
 	v.SetContent(text)
@@ -84,26 +85,32 @@ func figureSenderType(text string) Sender {
 	return v
 }
 
+// SetChatID sets chat ID for current sender
 func (s *SendAudio) SetChatID(i int) {
 	s.ChatID = i
 }
 
+// SetContent sets content for current sender
 func (s *SendAudio) SetContent(a string) {
 	s.Audio = a
 }
 
+// URL returns Telegram endpoint to process current sender
 func (s *SendAudio) URL() string {
 	return "/sendAudio"
 }
 
+// SetChatID sets chat ID for current sender
 func (s *SendMessage) SetChatID(i int) {
 	s.ChatID = i
 }
 
+// SetContent sets content for current sender
 func (s *SendMessage) SetContent(a string) {
 	s.Text = a
 }
 
+// URL returns Telegram endpoint to process current sender
 func (s *SendMessage) URL() string {
 	return "/sendMessage"
 }

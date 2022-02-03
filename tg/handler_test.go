@@ -76,7 +76,7 @@ func TestHandler(t *testing.T) {
 
 			test.AssertSameString(t, tt.tgServerTarget, stg.gotPath, "want tg service called path %q, got %q")
 			test.AssertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
-			test.AssertSameString(t, strings.TrimPrefix(tt.step.Response(), tg.PREFIX_AUDIO), stg.gotText, "want tg service receiving message %q, got %q")
+			test.AssertSameString(t, strings.TrimPrefix(tt.step.Response(), tg.PrefixAudio), stg.gotText, "want tg service receiving message %q, got %q")
 			test.AssertSameInt(t, tt.update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
 		})
 

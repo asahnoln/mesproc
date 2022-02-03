@@ -21,7 +21,7 @@ func createStory() *story.Story {
 			Fail(`Enter "sector 1"`)).
 		Add(story.NewStep().
 			Expect("sector 2").
-			Respond(tg.PREFIX_AUDIO + "http://asabalar.kz/kazakhstan.mp3").
+			Respond(tg.PrefixAudio + "http://asabalar.kz/kazakhstan.mp3").
 			Fail(`Enter "sector 2"`)).
 		Add(story.NewStep().
 			Expect("lulz").

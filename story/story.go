@@ -3,58 +3,75 @@ package story
 import "strings"
 
 const (
+	// I18nLanguageChanged is a default message returned by ResponseTo if language is changed
 	I18nLanguageChanged = "Language changed"
 )
 
+// I18nMap holds information on internationalization for the Story.
+// It uses English by default as indexes to find appropriate translations in other languages.
 type I18nMap map[string]map[string]string
 
+// Story holds information on the current story.
+// It has steps and i18n. The story is unfolded by using RespondTo, which always
+// advances internal counter to the next step until all steps are processed.
+// Then, it starts from the beginning.
 type Story struct {
-	steps   []*Step
-	curStep int
-	i18n    I18nMap
-	lang    string
+	steps        []*Step
+	curStepIndex int
+	i18n         I18nMap
+	lang         string
 }
 
+// New creates a new Story
 func New() *Story {
 	return &Story{}
 }
 
+// Add adds a Step to the Story
 func (s *Story) Add(step *Step) *Story {
 	s.steps = append(s.steps, step)
 	return s
 }
 
+// Step return the current step of the story.
 func (s *Story) Step() *Step {
-	return s.steps[s.curStep]
+	return s.steps[s.curStepIndex]
 }
 
+// RespondTo returns a response to given message from the current step.
+// Internally, on success, the Story advances internal counter to the next step,
+// changing current step.
 func (s *Story) RespondTo(m string) string {
 	if response, ok := s.parseI18nCommand(m); ok {
 		return response
 	}
 
-	r, ok := s.stepResponseOrFail(m, s.curStep)
+	r, ok := s.stepResponseOrFail(m, s.curStepIndex)
 	if ok {
-		s.curStep = s.rotateStep(s.curStep + 1)
+		s.curStepIndex = s.rotateStep(s.curStepIndex + 1)
 	}
 
 	return r
 }
 
+// RespondWithStepTo returns response from a step indicated by given index
 func (s *Story) RespondWithStepTo(stp int, m string) string {
 	r, _ := s.stepResponseOrFail(m, s.rotateStep(stp))
 	return r
 }
 
+// I18n sets i18n localzation for the story
 func (s *Story) I18n(i I18nMap) *Story {
 	s.i18n = i
 	return s
 }
 
+// Language retutns currently set language
 func (s *Story) Language() string {
 	return s.lang
 }
 
+// SetLanguage sets current language of the story according to i18n it has
 func (s *Story) SetLanguage(l string) *Story {
 	s.lang = l
 	return s
