@@ -12,6 +12,7 @@ import (
 	"github.com/asahnoln/mesproc/story"
 	"github.com/asahnoln/mesproc/test"
 	"github.com/asahnoln/mesproc/tg"
+	"github.com/stretchr/testify/assert"
 )
 
 type stubTgServer struct {
@@ -94,31 +95,26 @@ func TestDifferentUsersSteps(t *testing.T) {
 
 	th := tg.New(target, str)
 
-	body, _ := json.Marshal(tg.Update{
-		Message: tg.Message{
-			Chat: tg.Chat{
-				ID: 1,
-			},
-			Text: "step 1",
-		},
-	})
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
-	th.ServeHTTP(w, r)
-	test.AssertSameString(t, "go to step 2", stg.gotText, "want response for user 1 %q, got %q")
+	sendAndAssert := func(t testing.TB, id int, text, want string) {
+		t.Helper()
 
-	body, _ = json.Marshal(tg.Update{
-		Message: tg.Message{
-			Chat: tg.Chat{
-				ID: 2,
+		body, _ := json.Marshal(tg.Update{
+			Message: tg.Message{
+				Chat: tg.Chat{
+					ID: id,
+				},
+				Text: text,
 			},
-			Text: "wrong step",
-		},
-	})
-	w = httptest.NewRecorder()
-	r = httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
-	th.ServeHTTP(w, r)
-	test.AssertSameString(t, "still step 1", stg.gotText, "want response for user 2 %q, got %q")
+		})
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+		th.ServeHTTP(w, r)
+		assert.Equal(t, want, stg.gotText, "want response for user %d", id)
+	}
+
+	sendAndAssert(t, 1, "step 1", "go to step 2")
+	sendAndAssert(t, 1, "step 2", "finish")
+	sendAndAssert(t, 2, "wrong step", "still step 1")
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {

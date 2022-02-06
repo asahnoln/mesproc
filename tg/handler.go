@@ -35,7 +35,11 @@ type Sender interface {
 
 // New creates a Telegram handler.
 func New(target string, str *story.Story) *Handler {
-	return &Handler{target: target, str: str}
+	return &Handler{
+		target:   target,
+		str:      str,
+		usrSteps: make(map[int]int),
+	}
 }
 
 // receive gets an Update from a bot
@@ -54,8 +58,9 @@ func (h *Handler) send(u Update) {
 
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
-
 	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+
+	h.usrSteps[id]++
 }
 
 // ServeHTTP implements http.Handler
