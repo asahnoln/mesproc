@@ -115,6 +115,7 @@ func TestDifferentUsersSteps(t *testing.T) {
 	sendAndAssert(t, 1, "step 1", "go to step 2")
 	sendAndAssert(t, 1, "step 2", "finish")
 	sendAndAssert(t, 2, "wrong step", "still step 1")
+	sendAndAssert(t, 2, "wrong step", "still step 1")
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {

@@ -60,10 +60,26 @@ func (s *Story) RespondTo(m string) string {
 	return r
 }
 
+type Response struct {
+	text          string
+	shouldAdvance bool
+}
+
+func (r Response) Text() string {
+	return r.text
+}
+
+func (r Response) ShouldAdvance() bool {
+	return r.shouldAdvance
+}
+
 // RespondWithStepTo returns response from a step indicated by given index
-func (s *Story) RespondWithStepTo(stp int, m string) string {
-	r, _ := s.parseAndRespond(stp, m)
-	return r
+func (s *Story) RespondWithStepTo(stp int, m string) Response {
+	r, ok := s.parseAndRespond(stp, m)
+	return Response{
+		text:          r,
+		shouldAdvance: ok,
+	}
 }
 
 func (s *Story) parseAndRespond(stp int, m string) (string, bool) {

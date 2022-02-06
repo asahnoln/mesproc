@@ -65,7 +65,7 @@ func TestStoryI18N(t *testing.T) {
 	test.AssertSameString(t, "Язык изменен на русский", str.RespondTo("/ru"), "want language message %q, got %q")
 	test.AssertSameString(t, "Язык изменен на казахский", str.RespondTo("/kk"), "want language message %q, got %q")
 	test.AssertSameString(t, story.I18nLanguageChanged, str.RespondTo("/en"), "want language message %q, got %q")
-	test.AssertSameString(t, "Язык изменен на русский", str.RespondWithStepTo(12, "/ru"), "want language message %q, got %q")
+	test.AssertSameString(t, "Язык изменен на русский", str.RespondWithStepTo(12, "/ru").Text(), "want language message %q, got %q")
 }
 
 func TestSettingLanguageChangesMessage(t *testing.T) {
@@ -99,15 +99,23 @@ func TestRespondToSpecificStep(t *testing.T) {
 		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2"))
 
 	t.Run("doesn't affect current step of story", func(t *testing.T) {
-		test.AssertSameString(t, "finish", str.RespondWithStepTo(1, "step 2"), "want response %q, got %q")
+		test.AssertSameString(t, "finish", str.RespondWithStepTo(1, "step 2").Text(), "want response %q, got %q")
 
 		// Assert that function didn't advacne current step
 		test.AssertSameString(t, "step 1", str.Step().Expectation(), "want current step response %q, got %q")
 	})
 
 	t.Run("step rotates if out of range", func(t *testing.T) {
-		test.AssertSameString(t, "go to step 2", str.RespondWithStepTo(2, "step 1"), "want response %q, got %q")
-		test.AssertSameString(t, "still step 2", str.RespondWithStepTo(3, "wrong step"), "want response %q, got %q")
+		test.AssertSameString(t, "go to step 2", str.RespondWithStepTo(2, "step 1").Text(), "want response %q, got %q")
+		test.AssertSameString(t, "still step 2", str.RespondWithStepTo(3, "wrong step").Text(), "want response %q, got %q")
+	})
+
+	t.Run("successful response should advance the step", func(t *testing.T) {
+		assert.True(t, str.RespondWithStepTo(4, "step 1").ShouldAdvance(), "want ShouldAdvance() = true")
+	})
+
+	t.Run("wrong expectation must not advance the step", func(t *testing.T) {
+		assert.False(t, str.RespondWithStepTo(5, "step 1").ShouldAdvance(), "want ShouldAdvance() = false")
 	})
 }
 
@@ -120,10 +128,10 @@ func TestRespondToCommand(t *testing.T) {
 		},
 	})
 
-	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(5, "/command"), "want response %q, got %q")
+	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(5, "/command").Text(), "want response %q, got %q")
 
 	str.SetLanguage("ru")
-	test.AssertSameString(t, "это была команда", str.RespondWithStepTo(6, "/command"), "want response %q, got %q")
+	test.AssertSameString(t, "это была команда", str.RespondWithStepTo(6, "/command").Text(), "want response %q, got %q")
 }
 
 func TestLoadingFromJSON(t *testing.T) {
@@ -135,10 +143,10 @@ func TestLoadingFromJSON(t *testing.T) {
 	str, err := story.New().Load(f)
 	require.NoError(t, err, "unexpected error when loading proper JSON for the story")
 
-	assert.Equal(t, "still at step 1", str.RespondWithStepTo(0, "help"), "want fail message in response to wrong expectation")
-	assert.Equal(t, "now at step 2", str.RespondWithStepTo(0, "go to step 2"), "want response message to expectation")
-	assert.Equal(t, "proper geo", str.RespondWithStepTo(1, "43.257081,76.924835"), "want successfule response to approximate (50m) geo expectation")
-	assert.Equal(t, "now finished", str.RespondWithStepTo(2, "finish"), "want response message to final expectation")
+	assert.Equal(t, "still at step 1", str.RespondWithStepTo(0, "help").Text(), "want fail message in response to wrong expectation")
+	assert.Equal(t, "now at step 2", str.RespondWithStepTo(0, "go to step 2").Text(), "want response message to expectation")
+	assert.Equal(t, "proper geo", str.RespondWithStepTo(1, "43.257081,76.924835").Text(), "want successfule response to approximate (50m) geo expectation")
+	assert.Equal(t, "now finished", str.RespondWithStepTo(2, "finish").Text(), "want response message to final expectation")
 }
 
 func TestErrorLoadingFromJSON(t *testing.T) {

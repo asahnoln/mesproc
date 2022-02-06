@@ -24,7 +24,7 @@ func TestExpectGeoLocation(t *testing.T) {
 
 	str := story.New().Add(stp)
 
-	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(0, "43.257169,76.924515"), "want exact geo response %q, got %q")
-	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(1, "43.257081,76.924835"), "want approximate (50m) geo response %q, got %q")
+	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(0, "43.257169,76.924515").Text(), "want exact geo response %q, got %q")
+	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(1, "43.257081,76.924835").Text(), "want approximate (50m) geo response %q, got %q")
 	test.AssertSameString(t, stp.FailMessage(), str.RespondTo("43.257248572900004,76.92567261243957"), "want fail geo response when far %q, got %q")
 }

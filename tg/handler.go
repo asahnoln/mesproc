@@ -53,14 +53,17 @@ func (h *Handler) receive(w http.ResponseWriter, r *http.Request) Update {
 // send sends back a Sender
 func (h *Handler) send(u Update) {
 	id := u.Message.Chat.ID
-	v := figureSenderType(h.str.RespondWithStepTo(h.usrSteps[id], convertText(u)))
+	r := h.str.RespondWithStepTo(h.usrSteps[id], convertText(u))
+	v := figureSenderType(r.Text())
 	v.SetChatID(id)
 
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
 	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 
-	h.usrSteps[id]++
+	if r.ShouldAdvance() {
+		h.usrSteps[id]++
+	}
 }
 
 // ServeHTTP implements http.Handler
