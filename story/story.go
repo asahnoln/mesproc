@@ -65,12 +65,12 @@ func (s *Story) RespondWithStepTo(stp int, m string) string {
 }
 
 func (s *Story) parseAndRespond(stp int, m string) (string, bool) {
-	if response, ok := s.parseCommand(m); ok {
-		return response, false
+	if r, ok := s.parseCommand(m); ok {
+		return s.getI18nLine(r), false
 	}
 
 	r, ok := s.stepResponseOrFail(m, s.rotateStep(stp))
-	return r, ok
+	return s.getI18nLine(r), ok
 }
 
 // I18n sets i18n localzation for the story
@@ -90,26 +90,18 @@ func (s *Story) SetLanguage(l string) *Story {
 	return s
 }
 
-func (s *Story) rotateCurrentStep() {
-}
-
 func (s *Story) rotateStep(stp int) int {
 	return stp % len(s.steps)
 }
 
 func (s *Story) stepResponseOrFail(m string, stp int) (string, bool) {
-	var response string
-	var ok bool
 	step := s.steps[stp]
 
 	if s.isExpectationCorrect(m, step) {
-		ok = true
-		response = step.response
-	} else {
-		response = step.failMessage
+		return step.response, true
 	}
 
-	return s.getI18nLine(response), ok
+	return step.failMessage, false
 }
 
 func (s *Story) isExpectationCorrect(m string, stp *Step) bool {
@@ -142,20 +134,16 @@ func (s *Story) parseCommand(m string) (string, bool) {
 	}
 
 	if stp, ok := s.cmds[c]; ok {
-		return s.getI18nLine(stp.Response()), true
+		return stp.Response(), true
 	}
 
 	return "", false
 }
 
 func (s *Story) processI18nCommand(c string) (string, bool) {
-	if c == "en" {
-		return I18nLanguageChanged, true
-	}
-
-	if lines, ok := s.i18n[c]; ok {
+	if _, ok := s.i18n[c]; c == "en" || ok {
 		s.SetLanguage(c)
-		return lines[I18nLanguageChanged], true
+		return I18nLanguageChanged, true
 	}
 
 	return "", false
