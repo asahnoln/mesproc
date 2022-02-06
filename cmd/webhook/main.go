@@ -9,24 +9,13 @@ import (
 	"github.com/asahnoln/mesproc/tg"
 )
 
-func createStory() *story.Story {
+func loadStory() (*story.Story, error) {
+	f, err := os.Open(os.Getenv("STORY_PATH"))
+	if err != nil {
+		return nil, err
+	}
+
 	return story.New().
-		Add(story.NewStep().
-			ExpectGeo(43.257169, 76.924515, 50).
-			Respond("Correct location, now enter sector number").
-			Fail("Wrong location")).
-		Add(story.NewStep().
-			Expect("sector 1").
-			Respond("move on to next sector").
-			Fail(`Enter "sector 1"`)).
-		Add(story.NewStep().
-			Expect("sector 2").
-			Respond(tg.PrefixAudio + "http://asabalar.kz/kazakhstan.mp3").
-			Fail(`Enter "sector 2"`)).
-		Add(story.NewStep().
-			Expect("lulz").
-			Respond("finish here").
-			Fail(`Enter "lulz"`)).
 		I18n(story.I18nMap{
 			"ru": {
 				"sector 1":               "сектор 1",
@@ -46,11 +35,16 @@ func createStory() *story.Story {
 				"Correct location, now enter sector number": "kz Правильная локация, теперь введите сектор",
 				"Wrong location": "кз Неправильная локация",
 			},
-		})
+		}).Load(f)
 }
 
 func main() {
-	th := tg.New(os.Getenv("BOT_ADDR"), createStory())
+	str, err := loadStory()
+	if err != nil {
+		log.Fatalf("error loading the story: %v", err)
+	}
+
+	th := tg.New(os.Getenv("BOT_ADDR"), str)
 
 	log.Fatalln(http.ListenAndServeTLS(
 		os.Getenv("SRV_PORT"), os.Getenv("CERT_FILE"), os.Getenv("KEY_FILE"),

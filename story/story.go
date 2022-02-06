@@ -1,6 +1,8 @@
 package story
 
-import "strings"
+import (
+	"strings"
+)
 
 const (
 	// I18nLanguageChanged is a default message returned by ResponseTo if language is changed
@@ -105,11 +107,11 @@ func (s *Story) stepResponseOrFail(m string, stp int) (string, bool) {
 }
 
 func (s *Story) isExpectationCorrect(m string, stp *Step) bool {
-	if !s.Step().isGeo {
+	if !stp.isGeo {
 		return s.getI18nLine(stp.expectation) == m
 	}
 
-	return s.Step().checkGeo(m)
+	return stp.checkGeo(m)
 }
 
 func (s *Story) getI18nLine(l string) string {

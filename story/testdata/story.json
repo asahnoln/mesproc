@@ -1,0 +1,21 @@
+[
+  {
+    "expect": "go to step 2",
+    "response": "now at step 2",
+    "fail": "still at step 1"
+  },
+  {
+    "expectGeo": {
+      "lat": 43.257169,
+      "lon": 76.924515,
+      "precision": 50
+    },
+    "response": "proper geo",
+    "fail": "still waiting for geo"
+  },
+  {
+    "expect": "finish",
+    "response": "now finished",
+    "fail": "still at step 2"
+  }
+]

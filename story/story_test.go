@@ -1,10 +1,14 @@
 package story_test
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/asahnoln/mesproc/story"
 	"github.com/asahnoln/mesproc/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStoryCurrentStep(t *testing.T) {
@@ -120,4 +124,25 @@ func TestRespondToCommand(t *testing.T) {
 
 	str.SetLanguage("ru")
 	test.AssertSameString(t, "это была команда", str.RespondWithStepTo(6, "/command"), "want response %q, got %q")
+}
+
+func TestLoadingFromJSON(t *testing.T) {
+	f, err := os.Open("testdata/story.json")
+	defer f.Close()
+
+	require.NoError(t, err, "error opening file")
+
+	str, err := story.New().Load(f)
+	require.NoError(t, err, "unexpected error when loading proper JSON for the story")
+
+	assert.Equal(t, "still at step 1", str.RespondWithStepTo(0, "help"), "want fail message in response to wrong expectation")
+	assert.Equal(t, "now at step 2", str.RespondWithStepTo(0, "go to step 2"), "want response message to expectation")
+	assert.Equal(t, "proper geo", str.RespondWithStepTo(1, "43.257081,76.924835"), "want successfule response to approximate (50m) geo expectation")
+	assert.Equal(t, "now finished", str.RespondWithStepTo(2, "finish"), "want response message to final expectation")
+}
+
+func TestErrorLoadingFromJSON(t *testing.T) {
+	_, err := story.New().Load(strings.NewReader(""))
+
+	require.Error(t, err, "want error when loading wrong json")
 }
