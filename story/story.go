@@ -17,6 +17,7 @@ type I18nMap map[string]map[string]string
 // Then, it starts from the beginning.
 type Story struct {
 	steps        []*Step
+	cmds         map[string]*Step
 	curStepIndex int
 	i18n         I18nMap
 	lang         string
@@ -24,12 +25,19 @@ type Story struct {
 
 // New creates a new Story
 func New() *Story {
-	return &Story{}
+	return &Story{
+		cmds: make(map[string]*Step),
+	}
 }
 
 // Add adds a Step to the Story
 func (s *Story) Add(step *Step) *Story {
 	s.steps = append(s.steps, step)
+	return s
+}
+
+func (s *Story) AddCommand(step *Step) *Story {
+	s.cmds[step.Expectation()] = step
 	return s
 }
 
@@ -42,11 +50,7 @@ func (s *Story) Step() *Step {
 // Internally, on success, the Story advances internal counter to the next step,
 // changing current step.
 func (s *Story) RespondTo(m string) string {
-	if response, ok := s.parseI18nCommand(m); ok {
-		return response
-	}
-
-	r, ok := s.stepResponseOrFail(m, s.curStepIndex)
+	r, ok := s.parseAndRespond(s.curStepIndex, m)
 	if ok {
 		s.curStepIndex = s.rotateStep(s.curStepIndex + 1)
 	}
@@ -56,8 +60,17 @@ func (s *Story) RespondTo(m string) string {
 
 // RespondWithStepTo returns response from a step indicated by given index
 func (s *Story) RespondWithStepTo(stp int, m string) string {
-	r, _ := s.stepResponseOrFail(m, s.rotateStep(stp))
+	r, _ := s.parseAndRespond(stp, m)
 	return r
+}
+
+func (s *Story) parseAndRespond(stp int, m string) (string, bool) {
+	if response, ok := s.parseCommand(m); ok {
+		return response, false
+	}
+
+	r, ok := s.stepResponseOrFail(m, s.rotateStep(stp))
+	return r, ok
 }
 
 // I18n sets i18n localzation for the story
@@ -118,12 +131,24 @@ func (s *Story) getI18nLine(l string) string {
 	return l
 }
 
-func (s *Story) parseI18nCommand(m string) (string, bool) {
+func (s *Story) parseCommand(m string) (string, bool) {
 	if !strings.HasPrefix(m, "/") {
 		return "", false
 	}
 
 	c := m[1:]
+	if r, ok := s.processI18nCommand(c); ok {
+		return r, true
+	}
+
+	if stp, ok := s.cmds[c]; ok {
+		return s.getI18nLine(stp.Response()), true
+	}
+
+	return "", false
+}
+
+func (s *Story) processI18nCommand(c string) (string, bool) {
 	if c == "en" {
 		return I18nLanguageChanged, true
 	}

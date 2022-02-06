@@ -61,6 +61,7 @@ func TestStoryI18N(t *testing.T) {
 	test.AssertSameString(t, "Язык изменен на русский", str.RespondTo("/ru"), "want language message %q, got %q")
 	test.AssertSameString(t, "Язык изменен на казахский", str.RespondTo("/kk"), "want language message %q, got %q")
 	test.AssertSameString(t, story.I18nLanguageChanged, str.RespondTo("/en"), "want language message %q, got %q")
+	test.AssertSameString(t, "Язык изменен на русский", str.RespondWithStepTo(12, "/ru"), "want language message %q, got %q")
 }
 
 func TestSettingLanguageChangesMessage(t *testing.T) {
@@ -104,4 +105,19 @@ func TestRespondToSpecificStep(t *testing.T) {
 		test.AssertSameString(t, "go to step 2", str.RespondWithStepTo(2, "step 1"), "want response %q, got %q")
 		test.AssertSameString(t, "still step 2", str.RespondWithStepTo(3, "wrong step"), "want response %q, got %q")
 	})
+}
+
+func TestRespondToCommand(t *testing.T) {
+	stp := story.NewStep().Expect("command").Respond("that was a command").Fail("failed processing the command")
+	str := story.New().AddCommand(stp)
+	str.I18n(story.I18nMap{
+		"ru": {
+			"that was a command": "это была команда",
+		},
+	})
+
+	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(5, "/command"), "want response %q, got %q")
+
+	str.SetLanguage("ru")
+	test.AssertSameString(t, "это была команда", str.RespondWithStepTo(6, "/command"), "want response %q, got %q")
 }
