@@ -154,7 +154,7 @@ func TestLoadingFromJSON(t *testing.T) {
 
 	require.NoError(t, err, "error opening file")
 
-	str, err := story.New().Load(f)
+	str, err := story.Load(f)
 	require.NoError(t, err, "unexpected error when loading proper JSON for the story")
 
 	assert.Equal(t, "still at step 1", str.RespondWithStepTo(0, "help").Text(), "want fail message in response to wrong expectation")
@@ -164,7 +164,7 @@ func TestLoadingFromJSON(t *testing.T) {
 }
 
 func TestErrorLoadingFromJSON(t *testing.T) {
-	_, err := story.New().Load(strings.NewReader(""))
+	_, err := story.Load(strings.NewReader(""))
 
 	require.Error(t, err, "want error when loading wrong json")
 }

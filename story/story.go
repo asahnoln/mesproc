@@ -4,11 +4,6 @@ import (
 	"strings"
 )
 
-const (
-	// I18nLanguageChanged is a default message returned by ResponseTo if language is changed
-	I18nLanguageChanged = "Language changed"
-)
-
 // Response is a struct which story returns in response to a message
 type Response struct {
 	text, lang    string
@@ -29,10 +24,6 @@ func (r Response) ShouldAdvance() bool {
 func (r Response) Lang() string {
 	return r.lang
 }
-
-// I18nMap holds information on internationalization for the Story.
-// It uses English by default as indexes to find appropriate translations in other languages.
-type I18nMap map[string]map[string]string
 
 // Story holds information on the current story.
 // It has steps and i18n. The story is unfolded by using RespondTo, which always

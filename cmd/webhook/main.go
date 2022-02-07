@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,38 +11,33 @@ import (
 )
 
 func loadStory() (*story.Story, error) {
-	f, err := os.Open(os.Getenv("STORY_PATH"))
+	sFile, err := os.Open(os.Getenv("STORY_PATH"))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error opening story file: %w", err)
 	}
 
-	return story.New().
-		I18n(story.I18nMap{
-			"ru": {
-				"sector 1":               "сектор 1",
-				"sector 2":               "сектор 2",
-				"move on to next sector": "идите в следующий сектор",
-				`Enter "sector 1"`:       `Введите "сектор 1"`,
-				`Enter "sector 2"`:       `Введите "сектор 2"`,
-				`Enter "lulz"`:           `Введите "lulz"`,
-				"Correct location, now enter sector number": "Правильная локация, теперь введите сектор",
-				"Wrong location": "Неправильная локация",
-			},
-			"kk": {
-				"sector 1":               "сектор 1",
-				"sector 2":               "сектор 2",
-				"move on to next sector": "кз идите в следующий сектор",
-				`Enter "sector 2"`:       `кз Введите "сектор 2"`,
-				"Correct location, now enter sector number": "kz Правильная локация, теперь введите сектор",
-				"Wrong location": "кз Неправильная локация",
-			},
-		}).Load(f)
+	iFile, err := os.Open(os.Getenv("I18N_PATH"))
+	if err != nil {
+		return nil, fmt.Errorf("error opening i18n file: %w", err)
+	}
+
+	str, err := story.Load(sFile)
+	if err != nil {
+		return nil, fmt.Errorf("error loading story: %w", err)
+	}
+
+	i18n, err := story.LoadI18n(iFile)
+	if err != nil {
+		return nil, fmt.Errorf("error loading i18n: %w", err)
+	}
+
+	return str.I18n(i18n), nil
 }
 
 func main() {
 	str, err := loadStory()
 	if err != nil {
-		log.Fatalf("error loading the story: %v", err)
+		log.Fatalln(err)
 	}
 
 	th := tg.New(os.Getenv("BOT_ADDR"), str)

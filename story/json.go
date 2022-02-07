@@ -38,7 +38,8 @@ type JSONStep struct {
 //       "fail": "still at step 2"
 //     }
 //   ]
-func (s *Story) Load(r io.Reader) (*Story, error) {
+func Load(r io.Reader) (*Story, error) {
+	s := New()
 	steps := make([]JSONStep, 0)
 	err := json.NewDecoder(r).Decode(&steps)
 	if err != nil {
