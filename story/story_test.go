@@ -149,6 +149,7 @@ func TestRespondToCommand(t *testing.T) {
 
 func TestLoadingFromJSON(t *testing.T) {
 	f, err := os.Open("testdata/story.json")
+	require.NoError(t, err, "unexpected error loading test file")
 	defer f.Close()
 
 	require.NoError(t, err, "error opening file")
