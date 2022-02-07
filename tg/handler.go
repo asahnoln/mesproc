@@ -57,11 +57,11 @@ func (h *Handler) receive(w http.ResponseWriter, r *http.Request) Update {
 	// TODO: Handle error
 	json.NewDecoder(r.Body).Decode(&u)
 
-	h.logReceving(u)
+	h.logIncoming(u)
 	return u
 }
 
-func (h *Handler) logReceving(u Update) {
+func (h *Handler) logIncoming(u Update) {
 	if h.lgr != nil {
 		h.lgr.Printf("%s: telegram update: %#v", time.Now().Format(time.RFC3339), u)
 	}
