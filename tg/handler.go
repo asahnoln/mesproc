@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/asahnoln/mesproc/story"
 )
@@ -26,6 +28,7 @@ type Handler struct {
 	target  string
 	str     *story.Story
 	usrCfgs map[int]usrCfg
+	lgr     *log.Logger
 }
 
 // Sender is an interface for different sending options, like sendMessage, sendAudio etc.
@@ -39,11 +42,12 @@ type Sender interface {
 }
 
 // New creates a Telegram handler.
-func New(target string, str *story.Story) *Handler {
+func New(target string, str *story.Story, logger *log.Logger) *Handler {
 	return &Handler{
 		target:  target,
 		str:     str,
 		usrCfgs: make(map[int]usrCfg),
+		lgr:     logger,
 	}
 }
 
@@ -52,7 +56,15 @@ func (h *Handler) receive(w http.ResponseWriter, r *http.Request) Update {
 	var u Update
 	// TODO: Handle error
 	json.NewDecoder(r.Body).Decode(&u)
+
+	h.logReceving(u)
 	return u
+}
+
+func (h *Handler) logReceving(u Update) {
+	if h.lgr != nil {
+		h.lgr.Printf("%s: telegram update: %#v", time.Now().Format(time.RFC3339), u)
+	}
 }
 
 // send sends back a Sender

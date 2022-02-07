@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/asahnoln/mesproc/story"
 	"github.com/asahnoln/mesproc/tg"
@@ -66,7 +68,7 @@ func TestHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("%q to %q", tt.step.Response(), tt.tgServerTarget), func(t *testing.T) {
 			str := story.New().Add(tt.step)
-			th := tg.New(target, str)
+			th := tg.New(target, str, nil)
 
 			body, err := json.Marshal(&tt.update)
 			require.NoError(t, err, "unexpected error while marshalling object")
@@ -104,7 +106,7 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	close, target := stg.tgServerMockURL()
 	defer close()
 
-	th := tg.New(target, str)
+	th := tg.New(target, str, nil)
 
 	sendAndAssert := func(t testing.TB, id int, text, want string) {
 		t.Helper()
@@ -134,6 +136,38 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	sendAndAssert(t, 2, "/ru", "Language changed")
 	sendAndAssert(t, 2, "неверно", "все еще шаг 1")
 	sendAndAssert(t, 1, "where am I", "still step 1")
+}
+
+func TestLogging(t *testing.T) {
+	stg := stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	b := bytes.Buffer{}
+	lgr := log.New(&b, "", 0)
+	th := tg.New(
+		target,
+		story.New().Add(story.NewStep().Expect("ok").Respond("what")),
+		lgr,
+	)
+
+	obj := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 54,
+			},
+			Text: "something",
+		},
+	}
+	body, _ := json.Marshal(obj)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(body))
+	th.ServeHTTP(w, r)
+
+	assert.Contains(t, b.String(), "telegram update: ", "want logged message on receiving")
+	assert.Contains(t, b.String(), fmt.Sprintf("%#v", obj), "want logged update object on receiving")
+	assert.Contains(t, b.String(), time.Now().Format(time.RFC3339), "want logged date on receiving")
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
