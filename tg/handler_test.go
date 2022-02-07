@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/asahnoln/mesproc/story"
-	"github.com/asahnoln/mesproc/test"
 	"github.com/asahnoln/mesproc/tg"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type stubTgServer struct {
@@ -68,43 +68,22 @@ func TestHandler(t *testing.T) {
 			str := story.New().Add(tt.step)
 			th := tg.New(target, str)
 
-			body, _ := json.Marshal(&tt.update)
+			body, err := json.Marshal(&tt.update)
+			require.NoError(t, err, "unexpected error while marshalling object")
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(body))
 
 			th.ServeHTTP(w, r)
 
-			test.AssertSameString(t, tt.tgServerTarget, stg.gotPath, "want tg service called path %q, got %q")
-			test.AssertSameString(t, "application/json", stg.gotHeader, "want tg service receiving message %q, got %q")
-			test.AssertSameString(t, strings.TrimPrefix(tt.step.Response(), tg.PrefixAudio), stg.gotText, "want tg service receiving message %q, got %q")
-			test.AssertSameInt(t, tt.update.Message.Chat.ID, stg.gotChatID, "want tg service receiving chat id %v, got %v")
+			assert.Equal(t, tt.tgServerTarget, stg.gotPath, "want tg service right path")
+			assert.Equal(t, "application/json", stg.gotHeader, "want tg service right header")
+			assert.Equal(t, strings.TrimPrefix(tt.step.Response(), tg.PrefixAudio), stg.gotText, "want tg service receiving right message")
+			assert.Equal(t, tt.update.Message.Chat.ID, stg.gotChatID, "want tg service receiving right chat")
 		})
 
 	}
 }
-
-// func TestDifferentUsersLanguages(t *testing.T) {
-// 	str := story.New().
-// 		Add(story.NewStep().Expect("step one").Respond("good").Fail("bad")).
-// 		I18n(story.I18nMap{
-// 			"ru": {
-// 				"step one": "шаг первый",
-// 				"good":     "хорошо",
-// 			},
-// 		})
-
-// 	stg := &stubTgServer{}
-// 	close, target := stg.tgServerMockURL()
-// 	defer close()
-
-// 	th := tg.New(target, str)
-
-// 	w := httptest.NewRecorder()
-// 	r := httptest.NewRequest(http.MethodPost, "/", nil)
-
-// 	th.ServeHTTP(w, r)
-// }
 
 func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	str := story.New().
@@ -130,7 +109,7 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	sendAndAssert := func(t testing.TB, id int, text, want string) {
 		t.Helper()
 
-		body, _ := json.Marshal(tg.Update{
+		body, err := json.Marshal(tg.Update{
 			Message: tg.Message{
 				Chat: tg.Chat{
 					ID: id,
@@ -138,6 +117,8 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 				Text: text,
 			},
 		})
+		require.NoError(t, err, "unexpected error while marshaling object")
+
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 		th.ServeHTTP(w, r)

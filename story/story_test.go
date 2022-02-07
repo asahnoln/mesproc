@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/asahnoln/mesproc/story"
-	"github.com/asahnoln/mesproc/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -14,8 +13,8 @@ import (
 func TestStoryCurrentStep(t *testing.T) {
 	str := story.New().Add(story.NewStep().Expect("wow").Respond("yes!"))
 
-	test.AssertSameString(t, "wow", str.Step().Expectation(), "want current step expectation %q, got %q")
-	test.AssertSameString(t, "yes!", str.Step().Response(), "want current step expectation %q, got %q")
+	assert.Equal(t, "wow", str.Step().Expectation(), "want current step proper expectation")
+	assert.Equal(t, "yes!", str.Step().Response(), "want current step proper response")
 }
 
 func TestSteps(t *testing.T) {
@@ -31,11 +30,11 @@ func TestSteps(t *testing.T) {
 	str.Add(stp1).Add(stp2)
 
 	// TODO: RespondTo has side effects - winding the current step. Should rethink design?
-	test.AssertSameString(t, stp1.FailMessage(), str.RespondTo("smth else"), "want response %q, got %q")
-	test.AssertSameString(t, stp1.Response(), str.RespondTo("sector 1"), "want response %q, got %q")
+	assert.Equal(t, stp1.FailMessage(), str.RespondTo("smth else"), "want fail response")
+	assert.Equal(t, stp1.Response(), str.RespondTo("sector 1"), "want correct response")
 
-	test.AssertSameString(t, stp2.FailMessage(), str.RespondTo("sector 1"), "want response %q, got %q")
-	test.AssertSameString(t, stp2.Response(), str.RespondTo("lulz"), "want response %q, got %q")
+	assert.Equal(t, stp2.FailMessage(), str.RespondTo("sector 1"), "want response %q, got %q")
+	assert.Equal(t, stp2.Response(), str.RespondTo("lulz"), "want response %q, got %q")
 }
 
 func TestStoryMustLoop(t *testing.T) {
@@ -48,7 +47,7 @@ func TestStoryMustLoop(t *testing.T) {
 	str.RespondTo("s2")
 	str.RespondTo("s3")
 
-	test.AssertSameString(t, "step 1", str.RespondTo("s1"), "want response %q got %q")
+	assert.Equal(t, "step 1", str.RespondTo("s1"), "want response %q got %q")
 }
 
 func TestStoryI18N(t *testing.T) {
@@ -62,10 +61,10 @@ func TestStoryI18N(t *testing.T) {
 			},
 		})
 
-	test.AssertSameString(t, "Язык изменен на русский", str.RespondTo("/ru"), "want language message in Russian %q, got %q")
-	test.AssertSameString(t, "Язык изменен на казахский", str.RespondTo("/kk"), "want language message in Kazakh %q, got %q")
-	test.AssertSameString(t, story.I18nLanguageChanged, str.RespondTo("/en"), "want language message in English %q, got %q")
-	test.AssertSameString(t, "Язык изменен на русский", str.RespondWithStepTo(12, "/ru").Text(), "want language message in Russian %q, got %q")
+	assert.Equal(t, "Язык изменен на русский", str.RespondTo("/ru"), "want language message in Russian %q, got %q")
+	assert.Equal(t, "Язык изменен на казахский", str.RespondTo("/kk"), "want language message in Kazakh %q, got %q")
+	assert.Equal(t, story.I18nLanguageChanged, str.RespondTo("/en"), "want language message in English %q, got %q")
+	assert.Equal(t, "Язык изменен на русский", str.RespondWithStepTo(12, "/ru").Text(), "want language message in Russian %q, got %q")
 }
 
 func TestSettingLanguageChangesMessage(t *testing.T) {
@@ -84,13 +83,13 @@ func TestSettingLanguageChangesMessage(t *testing.T) {
 
 	str.RespondTo("/ru")
 
-	test.AssertSameString(t, "ru", str.Language(), "want language %q, got %q")
-	test.AssertSameString(t, "история 1", str.RespondTo("шаг 1"), "want i18n response %q, got %q")
+	assert.Equal(t, "ru", str.Language(), "want language %q, got %q")
+	assert.Equal(t, "история 1", str.RespondTo("шаг 1"), "want i18n response %q, got %q")
 
 	// Default line should come out if there is no i18n
-	test.AssertSameString(t, "story 2", str.RespondTo("шаг 2"), "want i18n default response %q, got %q")
+	assert.Equal(t, "story 2", str.RespondTo("шаг 2"), "want i18n default response %q, got %q")
 
-	test.AssertSameString(t, "введите шаг 3", str.RespondTo("wrong"), "want i18n fail response %q, got %q")
+	assert.Equal(t, "введите шаг 3", str.RespondTo("wrong"), "want i18n fail response %q, got %q")
 }
 
 func TestRespondToSpecificStep(t *testing.T) {
@@ -99,15 +98,15 @@ func TestRespondToSpecificStep(t *testing.T) {
 		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2"))
 
 	t.Run("doesn't affect current step of story", func(t *testing.T) {
-		test.AssertSameString(t, "finish", str.RespondWithStepTo(1, "step 2").Text(), "want response %q, got %q")
+		assert.Equal(t, "finish", str.RespondWithStepTo(1, "step 2").Text(), "want response %q, got %q")
 
 		// Assert that function didn't advacne current step
-		test.AssertSameString(t, "step 1", str.Step().Expectation(), "want current step response %q, got %q")
+		assert.Equal(t, "step 1", str.Step().Expectation(), "want current step response %q, got %q")
 	})
 
 	t.Run("step rotates if out of range", func(t *testing.T) {
-		test.AssertSameString(t, "go to step 2", str.RespondWithStepTo(2, "step 1").Text(), "want response %q, got %q")
-		test.AssertSameString(t, "still step 2", str.RespondWithStepTo(3, "wrong step").Text(), "want response %q, got %q")
+		assert.Equal(t, "go to step 2", str.RespondWithStepTo(2, "step 1").Text(), "want response %q, got %q")
+		assert.Equal(t, "still step 2", str.RespondWithStepTo(3, "wrong step").Text(), "want response %q, got %q")
 	})
 
 	t.Run("successful response should advance the step", func(t *testing.T) {
@@ -142,10 +141,10 @@ func TestRespondToCommand(t *testing.T) {
 		},
 	})
 
-	test.AssertSameString(t, stp.Response(), str.RespondWithStepTo(5, "/command").Text(), "want response %q, got %q")
+	assert.Equal(t, stp.Response(), str.RespondWithStepTo(5, "/command").Text(), "want response %q, got %q")
 
 	str.SetLanguage("ru")
-	test.AssertSameString(t, "это была команда", str.RespondWithStepTo(6, "/command").Text(), "want response %q, got %q")
+	assert.Equal(t, "это была команда", str.RespondWithStepTo(6, "/command").Text(), "want response %q, got %q")
 }
 
 func TestLoadingFromJSON(t *testing.T) {
