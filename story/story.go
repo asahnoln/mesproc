@@ -9,6 +9,27 @@ const (
 	I18nLanguageChanged = "Language changed"
 )
 
+// Response is a struct which story returns in response to a message
+type Response struct {
+	text, lang    string
+	shouldAdvance bool
+}
+
+// Text returns text of response
+func (r Response) Text() string {
+	return r.text
+}
+
+// ShouldAdvance returns whether the step index should advance in the story for the next response
+func (r Response) ShouldAdvance() bool {
+	return r.shouldAdvance
+}
+
+// Lang returns the language of the response
+func (r Response) Lang() string {
+	return r.lang
+}
+
 // I18nMap holds information on internationalization for the Story.
 // It uses English by default as indexes to find appropriate translations in other languages.
 type I18nMap map[string]map[string]string
@@ -58,23 +79,6 @@ func (s *Story) RespondTo(m string) string {
 	}
 
 	return r
-}
-
-type Response struct {
-	text, lang    string
-	shouldAdvance bool
-}
-
-func (r Response) Text() string {
-	return r.text
-}
-
-func (r Response) ShouldAdvance() bool {
-	return r.shouldAdvance
-}
-
-func (r Response) Lang() string {
-	return r.lang
 }
 
 // RespondWithStepTo returns response from a step indicated by given index
