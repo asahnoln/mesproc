@@ -52,7 +52,7 @@ func (s *Story) Step() *Step {
 // Internally, on success, the Story advances internal counter to the next step,
 // changing current step.
 func (s *Story) RespondTo(m string) string {
-	r, ok := s.parseAndRespond(s.curStepIndex, m)
+	r, _, ok := s.parseAndRespond(s.curStepIndex, s.Language(), m)
 	if ok {
 		s.curStepIndex = s.rotateStep(s.curStepIndex + 1)
 	}
@@ -61,7 +61,7 @@ func (s *Story) RespondTo(m string) string {
 }
 
 type Response struct {
-	text          string
+	text, lang    string
 	shouldAdvance bool
 }
 
@@ -73,22 +73,38 @@ func (r Response) ShouldAdvance() bool {
 	return r.shouldAdvance
 }
 
+func (r Response) Lang() string {
+	return r.lang
+}
+
 // RespondWithStepTo returns response from a step indicated by given index
 func (s *Story) RespondWithStepTo(stp int, m string) Response {
-	r, ok := s.parseAndRespond(stp, m)
+	r, _, ok := s.parseAndRespond(stp, s.Language(), m)
 	return Response{
 		text:          r,
 		shouldAdvance: ok,
 	}
 }
 
-func (s *Story) parseAndRespond(stp int, m string) (string, bool) {
-	if r, ok := s.parseCommand(m); ok {
-		return s.getI18nLine(r), false
+func (s *Story) RespondWithLangStepTo(stp int, lang string, m string) Response {
+	r, l, ok := s.parseAndRespond(stp, lang, m)
+	return Response{
+		text:          r,
+		shouldAdvance: ok,
+		lang:          l,
+	}
+}
+
+func (s *Story) parseAndRespond(stp int, lang string, m string) (string, string, bool) {
+	if r, l, ok := s.parseCommand(m); ok {
+		if l != "" {
+			lang = l
+		}
+		return s.getI18nLine(lang, r), lang, false
 	}
 
-	r, ok := s.stepResponseOrFail(m, s.rotateStep(stp))
-	return s.getI18nLine(r), ok
+	r, ok := s.stepResponseOrFail(m, lang, s.rotateStep(stp))
+	return s.getI18nLine(lang, r), lang, ok
 }
 
 // I18n sets i18n localzation for the story
@@ -112,27 +128,27 @@ func (s *Story) rotateStep(stp int) int {
 	return stp % len(s.steps)
 }
 
-func (s *Story) stepResponseOrFail(m string, stp int) (string, bool) {
+func (s *Story) stepResponseOrFail(m, lang string, stp int) (string, bool) {
 	step := s.steps[stp]
 
-	if s.isExpectationCorrect(m, step) {
+	if s.isExpectationCorrect(m, lang, step) {
 		return step.response, true
 	}
 
 	return step.failMessage, false
 }
 
-func (s *Story) isExpectationCorrect(m string, stp *Step) bool {
+func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
 	if !stp.isGeo {
-		return s.getI18nLine(stp.expectation) == m
+		return s.getI18nLine(lang, stp.expectation) == m
 	}
 
 	return stp.checkGeo(m)
 }
 
-func (s *Story) getI18nLine(l string) string {
-	if s.lang != "" {
-		r, ok := s.i18n[s.lang][l]
+func (s *Story) getI18nLine(lang, l string) string {
+	if lang != "" {
+		r, ok := s.i18n[lang][l]
 		if ok {
 			l = r
 		}
@@ -141,28 +157,28 @@ func (s *Story) getI18nLine(l string) string {
 	return l
 }
 
-func (s *Story) parseCommand(m string) (string, bool) {
+func (s *Story) parseCommand(m string) (string, string, bool) {
 	if !strings.HasPrefix(m, "/") {
-		return "", false
+		return "", "", false
 	}
 
 	c := m[1:]
-	if r, ok := s.processI18nCommand(c); ok {
-		return r, true
+	if r, lang, ok := s.processI18nCommand(c); ok {
+		return r, lang, true
 	}
 
 	if stp, ok := s.cmds[c]; ok {
-		return stp.Response(), true
+		return stp.Response(), "", true
 	}
 
-	return "", false
+	return "", "", false
 }
 
-func (s *Story) processI18nCommand(c string) (string, bool) {
+func (s *Story) processI18nCommand(c string) (string, string, bool) {
 	if _, ok := s.i18n[c]; c == "en" || ok {
 		s.SetLanguage(c)
-		return I18nLanguageChanged, true
+		return I18nLanguageChanged, c, true
 	}
 
-	return "", false
+	return "", "", false
 }

@@ -62,10 +62,10 @@ func TestStoryI18N(t *testing.T) {
 			},
 		})
 
-	test.AssertSameString(t, "Язык изменен на русский", str.RespondTo("/ru"), "want language message %q, got %q")
-	test.AssertSameString(t, "Язык изменен на казахский", str.RespondTo("/kk"), "want language message %q, got %q")
-	test.AssertSameString(t, story.I18nLanguageChanged, str.RespondTo("/en"), "want language message %q, got %q")
-	test.AssertSameString(t, "Язык изменен на русский", str.RespondWithStepTo(12, "/ru").Text(), "want language message %q, got %q")
+	test.AssertSameString(t, "Язык изменен на русский", str.RespondTo("/ru"), "want language message in Russian %q, got %q")
+	test.AssertSameString(t, "Язык изменен на казахский", str.RespondTo("/kk"), "want language message in Kazakh %q, got %q")
+	test.AssertSameString(t, story.I18nLanguageChanged, str.RespondTo("/en"), "want language message in English %q, got %q")
+	test.AssertSameString(t, "Язык изменен на русский", str.RespondWithStepTo(12, "/ru").Text(), "want language message in Russian %q, got %q")
 }
 
 func TestSettingLanguageChangesMessage(t *testing.T) {
@@ -117,6 +117,20 @@ func TestRespondToSpecificStep(t *testing.T) {
 	t.Run("wrong expectation must not advance the step", func(t *testing.T) {
 		assert.False(t, str.RespondWithStepTo(5, "step 1").ShouldAdvance(), "want ShouldAdvance() = false")
 	})
+}
+
+func TestRespondWithLanguage(t *testing.T) {
+	str := story.New().
+		Add(story.NewStep().Expect("step 1").Respond("that's it").Fail("still step 1")).
+		I18n(story.I18nMap{
+			"ru": {
+				"step 1":    "шаг 1",
+				"that's it": "вот и всё",
+			},
+		})
+
+	assert.Equal(t, "вот и всё", str.RespondWithLangStepTo(0, "ru", "шаг 1").Text(), "want i18n successful response")
+	assert.Equal(t, "ru", str.RespondWithLangStepTo(0, "en", "/ru").Lang(), "want i18n successful change")
 }
 
 func TestRespondToCommand(t *testing.T) {

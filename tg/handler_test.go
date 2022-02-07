@@ -84,10 +84,42 @@ func TestHandler(t *testing.T) {
 	}
 }
 
-func TestDifferentUsersSteps(t *testing.T) {
+// func TestDifferentUsersLanguages(t *testing.T) {
+// 	str := story.New().
+// 		Add(story.NewStep().Expect("step one").Respond("good").Fail("bad")).
+// 		I18n(story.I18nMap{
+// 			"ru": {
+// 				"step one": "шаг первый",
+// 				"good":     "хорошо",
+// 			},
+// 		})
+
+// 	stg := &stubTgServer{}
+// 	close, target := stg.tgServerMockURL()
+// 	defer close()
+
+// 	th := tg.New(target, str)
+
+// 	w := httptest.NewRecorder()
+// 	r := httptest.NewRequest(http.MethodPost, "/", nil)
+
+// 	th.ServeHTTP(w, r)
+// }
+
+func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	str := story.New().
 		Add(story.NewStep().Expect("step 1").Respond("go to step 2").Fail("still step 1")).
-		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2"))
+		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2")).
+		I18n(story.I18nMap{
+			"ru": {
+				"step 1":       "шаг 1",
+				"go to step 2": "идите к шагу 2",
+				"still step 1": "все еще шаг 1",
+				"step 2":       "шаг 2",
+				"finish":       "финиш",
+				"still step 2": "все еще шаг 2",
+			},
+		})
 
 	stg := &stubTgServer{}
 	close, target := stg.tgServerMockURL()
@@ -112,10 +144,15 @@ func TestDifferentUsersSteps(t *testing.T) {
 		assert.Equal(t, want, stg.gotText, "want response for user %d", id)
 	}
 
+	// Tested different steps for users
 	sendAndAssert(t, 1, "step 1", "go to step 2")
+	sendAndAssert(t, 2, "wrong step", "still step 1")
+
+	// Testing different languages
 	sendAndAssert(t, 1, "step 2", "finish")
-	sendAndAssert(t, 2, "wrong step", "still step 1")
-	sendAndAssert(t, 2, "wrong step", "still step 1")
+	sendAndAssert(t, 2, "/ru", "Language changed")
+	sendAndAssert(t, 2, "неверно", "все еще шаг 1")
+	sendAndAssert(t, 1, "where am I", "still step 1")
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {

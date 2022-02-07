@@ -16,11 +16,16 @@ const (
 	PrefixAudio = "audio:"
 )
 
+type usrCfg struct {
+	step int
+	lang string
+}
+
 // Handler is a Telegram handler, which implements receiving messages from a bot and sending them back
 type Handler struct {
-	target   string
-	str      *story.Story
-	usrSteps map[int]int
+	target  string
+	str     *story.Story
+	usrCfgs map[int]usrCfg
 }
 
 // Sender is an interface for different sending options, like sendMessage, sendAudio etc.
@@ -36,9 +41,9 @@ type Sender interface {
 // New creates a Telegram handler.
 func New(target string, str *story.Story) *Handler {
 	return &Handler{
-		target:   target,
-		str:      str,
-		usrSteps: make(map[int]int),
+		target:  target,
+		str:     str,
+		usrCfgs: make(map[int]usrCfg),
 	}
 }
 
@@ -53,7 +58,9 @@ func (h *Handler) receive(w http.ResponseWriter, r *http.Request) Update {
 // send sends back a Sender
 func (h *Handler) send(u Update) {
 	id := u.Message.Chat.ID
-	r := h.str.RespondWithStepTo(h.usrSteps[id], convertText(u))
+	usrCfg := h.usrCfgs[id]
+
+	r := h.str.RespondWithLangStepTo(usrCfg.step, usrCfg.lang, convertText(u))
 	v := figureSenderType(r.Text())
 	v.SetChatID(id)
 
@@ -61,9 +68,15 @@ func (h *Handler) send(u Update) {
 	m, _ := json.Marshal(v)
 	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 
+	h.updateUsrCfg(id, usrCfg, r)
+}
+
+func (h *Handler) updateUsrCfg(id int, u usrCfg, r story.Response) {
 	if r.ShouldAdvance() {
-		h.usrSteps[id]++
+		u.step++
 	}
+	u.lang = r.Lang()
+	h.usrCfgs[id] = u
 }
 
 // ServeHTTP implements http.Handler
