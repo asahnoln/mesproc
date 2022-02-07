@@ -148,8 +148,7 @@ func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
 
 func (s *Story) getI18nLine(lang, l string) string {
 	if lang != "" {
-		r, ok := s.i18n[lang][l]
-		if ok {
+		if r, ok := s.i18n[lang][l]; ok {
 			l = r
 		}
 	}
