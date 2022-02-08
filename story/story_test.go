@@ -175,3 +175,25 @@ func TestExpectationCaseInsensitive(t *testing.T) {
 
 	assert.Equal(t, "success!", str.RespondWithLangStepTo(0, "", "lOl ThIs GoOd").Text(), "want case-insensitive expectation")
 }
+
+func TestSeveralResponses(t *testing.T) {
+	str := story.New().
+		Add(story.NewStep().Expect("message").Respond("first message", "second message")).
+		I18n(story.I18nMap{
+			"ru": {
+				"message":        "сообщение",
+				"first message":  "первое сообщение",
+				"second message": "второе сообщение",
+			},
+		})
+
+	rs := str.ResponsesWithLangStepTo(0, "", "message")
+	assert.Len(t, rs, 2, "want several responses")
+	assert.Equal(t, "first message", rs[0].Text(), "want first message")
+	assert.Equal(t, "second message", rs[1].Text(), "want second message")
+
+	rs = str.ResponsesWithLangStepTo(0, "ru", "сообщение")
+	assert.Len(t, rs, 2, "want several responses")
+	assert.Equal(t, "первое сообщение", rs[0].Text(), "want first message")
+	assert.Equal(t, "второе сообщение", rs[1].Text(), "want second message")
+}

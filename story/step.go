@@ -10,7 +10,7 @@ import (
 // and how it would respond to proper or a wrong message.
 type Step struct {
 	expectation string
-	response    string
+	responses   []string
 	failMessage string
 	isGeo       bool
 	geoExp      [3]float64
@@ -28,7 +28,12 @@ func (s *Step) Expectation() string {
 
 // Response returns response of the Step
 func (s *Step) Response() string {
-	return s.response
+	return s.responses[0]
+}
+
+// Response returns response of the Step
+func (s *Step) Responses() []string {
+	return s.responses
 }
 
 // FailMessage returns a fail message which is given when given message is not what expected.
@@ -43,8 +48,8 @@ func (s *Step) Expect(e string) *Step {
 }
 
 // Respond sets response for the right message
-func (s *Step) Respond(r string) *Step {
-	s.response = r
+func (s *Step) Respond(r ...string) *Step {
+	s.responses = r
 	return s
 }
 
