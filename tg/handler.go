@@ -72,15 +72,18 @@ func (h *Handler) send(u Update) {
 	id := u.Message.Chat.ID
 	usrCfg := h.usrCfgs[id]
 
-	r := h.str.RespondWithLangStepTo(usrCfg.step, usrCfg.lang, convertText(u))
-	v := figureSenderType(r.Text())
-	v.SetChatID(id)
+	rs := h.str.ResponsesWithLangStepTo(usrCfg.step, usrCfg.lang, convertText(u))
 
-	// TODO: Handle error
-	m, _ := json.Marshal(v)
-	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+	for _, r := range rs {
+		v := figureSenderType(r.Text())
+		v.SetChatID(id)
 
-	h.updateUsrCfg(id, usrCfg, r)
+		// TODO: Handle error
+		m, _ := json.Marshal(v)
+		http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+	}
+
+	h.updateUsrCfg(id, usrCfg, rs[0])
 }
 
 func (h *Handler) updateUsrCfg(id int, u usrCfg, r story.Response) {
