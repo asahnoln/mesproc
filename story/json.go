@@ -11,10 +11,12 @@ type JSONExpectGeo struct {
 }
 
 type JSONStep struct {
-	Command        bool
-	Expect         *string
-	Response, Fail string
-	ExpectGeo      *JSONExpectGeo
+	Command   bool
+	Expect    *string
+	Response  *string
+	Fail      string
+	Responses []string
+	ExpectGeo *JSONExpectGeo
 }
 
 // Load loads story steps from given JSON file. Structure should be as follows:
@@ -53,7 +55,15 @@ func Load(r io.Reader) (*Story, error) {
 	}
 
 	for _, ss := range steps {
-		step := NewStep().Respond(ss.Response).Fail(ss.Fail)
+		step := NewStep().Fail(ss.Fail)
+
+		switch {
+		case ss.Response != nil:
+			step.Respond(*ss.Response)
+		case ss.Responses != nil:
+			step.Respond(ss.Responses...)
+		}
+
 		if ss.Expect != nil {
 			step = step.Expect(*ss.Expect)
 		} else {

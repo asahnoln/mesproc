@@ -64,32 +64,24 @@ func (s *Story) Step() *Step {
 // Internally, on success, the Story advances internal counter to the next step,
 // changing current step.
 func (s *Story) RespondTo(m string) string {
-	r, _, ok := s.parseAndRespond(s.curStepIndex, s.Language(), m)
-	if ok {
+	r := s.ResponsesWithLangStepTo(s.curStepIndex, s.Language(), m)[0]
+	if r.shouldAdvance {
 		s.curStepIndex = s.rotateStep(s.curStepIndex + 1)
 	}
 
-	return r[0]
+	return r.Text()
 }
 
 // RespondWithStepTo returns response from a step indicated by given index
 func (s *Story) RespondWithStepTo(stp int, m string) Response {
-	r, _, ok := s.parseAndRespond(stp, s.Language(), m)
-	return Response{
-		text:          r[0],
-		shouldAdvance: ok,
-	}
+	return s.ResponsesWithLangStepTo(stp, s.Language(), m)[0]
 }
 
 func (s *Story) RespondWithLangStepTo(stp int, lang string, m string) Response {
-	r, l, ok := s.parseAndRespond(stp, lang, m)
-	return Response{
-		text:          r[0],
-		shouldAdvance: ok,
-		lang:          l,
-	}
+	return s.ResponsesWithLangStepTo(stp, lang, m)[0]
 }
 
+// ResponsesWithLangStepTo return multiple responses from a step with ones
 func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Response {
 	rs, l, ok := s.parseAndRespond(stp, lang, m)
 	result := make([]Response, len(rs))

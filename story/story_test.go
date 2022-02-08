@@ -161,7 +161,11 @@ func TestLoadingFromJSON(t *testing.T) {
 	assert.Equal(t, "now at step 2", str.RespondWithStepTo(0, "go to step 2").Text(), "want response message to expectation")
 	assert.Equal(t, "proper geo", str.RespondWithStepTo(1, "43.257081,76.924835").Text(), "want successfule response to approximate (50m) geo expectation")
 	assert.Equal(t, "now finished", str.RespondWithStepTo(2, "finish").Text(), "want response message to final expectation")
+
 	assert.Equal(t, "let's start", str.RespondWithLangStepTo(99, "", "/start").Text(), "want response message to command")
+
+	rs := str.ResponsesWithLangStepTo(3, "", "multi")
+	assert.Len(t, rs, 3, "want multi response step")
 }
 
 func TestErrorLoadingFromJSON(t *testing.T) {

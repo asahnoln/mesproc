@@ -22,5 +22,10 @@
     "expect": "finish",
     "response": "now finished",
     "fail": "still at step 2"
+  },
+  {
+    "expect": "multi",
+    "responses": ["first", "second", "third"],
+    "fail": "failed multi"
   }
 ]
