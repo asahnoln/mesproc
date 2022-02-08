@@ -161,10 +161,17 @@ func TestLoadingFromJSON(t *testing.T) {
 	assert.Equal(t, "now at step 2", str.RespondWithStepTo(0, "go to step 2").Text(), "want response message to expectation")
 	assert.Equal(t, "proper geo", str.RespondWithStepTo(1, "43.257081,76.924835").Text(), "want successfule response to approximate (50m) geo expectation")
 	assert.Equal(t, "now finished", str.RespondWithStepTo(2, "finish").Text(), "want response message to final expectation")
+	assert.Equal(t, "let's start", str.RespondWithLangStepTo(99, "", "/start").Text(), "want response message to command")
 }
 
 func TestErrorLoadingFromJSON(t *testing.T) {
 	_, err := story.Load(strings.NewReader(""))
 
 	require.Error(t, err, "want error when loading wrong json")
+}
+
+func TestExpectationCaseInsensitive(t *testing.T) {
+	str := story.New().Add(story.NewStep().Expect("LOL this GOOD").Respond("success!").Fail("failed"))
+
+	assert.Equal(t, "success!", str.RespondWithLangStepTo(0, "", "lOl ThIs GoOd").Text(), "want case-insensitive expectation")
 }

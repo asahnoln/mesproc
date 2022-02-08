@@ -135,7 +135,7 @@ func (s *Story) stepResponseOrFail(m, lang string, stp int) (string, bool) {
 
 func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
 	if !stp.isGeo {
-		return s.getI18nLine(lang, stp.expectation) == m
+		return strings.EqualFold(s.getI18nLine(lang, stp.expectation), m)
 	}
 
 	return stp.checkGeo(m)

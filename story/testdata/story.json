@@ -1,5 +1,10 @@
 [
   {
+    "command": true,
+    "expect": "start",
+    "response": "let's start"
+  },
+  {
     "expect": "go to step 2",
     "response": "now at step 2",
     "fail": "still at step 1"
