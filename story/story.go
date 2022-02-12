@@ -55,28 +55,6 @@ func (s *Story) AddCommand(step *Step) *Story {
 	return s
 }
 
-// Step return the current step of the story.
-func (s *Story) Step() *Step {
-	return s.steps[s.curStepIndex]
-}
-
-// RespondTo returns a response to given message from the current step.
-// Internally, on success, the Story advances internal counter to the next step,
-// changing current step.
-func (s *Story) RespondTo(m string) string {
-	r := s.ResponsesWithLangStepTo(s.curStepIndex, s.Language(), m)[0]
-	if r.shouldAdvance {
-		s.curStepIndex = s.rotateStep(s.curStepIndex + 1)
-	}
-
-	return r.Text()
-}
-
-// RespondWithStepTo returns response from a step indicated by given index
-func (s *Story) RespondWithStepTo(stp int, m string) Response {
-	return s.ResponsesWithLangStepTo(stp, s.Language(), m)[0]
-}
-
 func (s *Story) RespondWithLangStepTo(stp int, lang string, m string) Response {
 	return s.ResponsesWithLangStepTo(stp, lang, m)[0]
 }
@@ -110,17 +88,6 @@ func (s *Story) parseAndRespond(stp int, lang string, m string) ([]string, strin
 // I18n sets i18n localzation for the story
 func (s *Story) I18n(i I18nMap) *Story {
 	s.i18n = i
-	return s
-}
-
-// Language retutns currently set language
-func (s *Story) Language() string {
-	return s.lang
-}
-
-// SetLanguage sets current language of the story according to i18n it has
-func (s *Story) SetLanguage(l string) *Story {
-	s.lang = l
 	return s
 }
 
@@ -183,7 +150,6 @@ func (s *Story) parseCommand(m string) ([]string, string, bool) {
 
 func (s *Story) processI18nCommand(c string) (string, string, bool) {
 	if _, ok := s.i18n[c]; c == "en" || ok {
-		s.SetLanguage(c)
 		return I18nLanguageChanged, c, true
 	}
 
