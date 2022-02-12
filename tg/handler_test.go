@@ -103,16 +103,17 @@ func TestHandler(t *testing.T) {
 
 func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	str := story.New().
-		Add(story.NewStep().Expect("step 1").Respond("go to step 2").Fail("still step 1")).
+		Add(story.NewStep().Expect("step 1").Respond("you're great!", "go to step 2").Fail("still step 1")).
 		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2")).
 		I18n(story.I18nMap{
 			"ru": {
-				"step 1":       "шаг 1",
-				"go to step 2": "идите к шагу 2",
-				"still step 1": "все еще шаг 1",
-				"step 2":       "шаг 2",
-				"finish":       "финиш",
-				"still step 2": "все еще шаг 2",
+				"step 1":        "шаг 1",
+				"you're great!": "вы классный!",
+				"go to step 2":  "идите к шагу 2",
+				"still step 1":  "все еще шаг 1",
+				"step 2":        "шаг 2",
+				"finish":        "финиш",
+				"still step 2":  "все еще шаг 2",
 			},
 		})
 
@@ -123,8 +124,7 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	th := tg.New(target, str, nil)
 
 	// TODO: Rework through table tests so we don't have this difficult logic of testing
-	i := 0
-	sendAndAssert := func(t testing.TB, id int, text, want string) {
+	sendAndAssert := func(t testing.TB, id int, text string, want ...string) {
 		t.Helper()
 		body, err := json.Marshal(tg.Update{
 			Message: tg.Message{
@@ -140,19 +140,27 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 		th.ServeHTTP(w, r)
 
-		assert.Equal(t, want, stg.gotText[i], "want response for user %d", id)
-		i++
+		for j, w := range want {
+			assert.Equal(t, w, stg.gotText[j], "want response for user %d", id)
+		}
+
+		// Reset server values
+		stg.zero()
 	}
 
 	// Tested different steps for users
-	sendAndAssert(t, 1, "step 1", "go to step 2")
+	sendAndAssert(t, 1, "step 1", "you're great!", "go to step 2")
 	sendAndAssert(t, 2, "wrong step", "still step 1")
 
 	// Testing different languages
 	sendAndAssert(t, 1, "step 2", "finish")
+
 	sendAndAssert(t, 2, "/ru", "Language changed")
 	sendAndAssert(t, 2, "неверно", "все еще шаг 1")
+
 	sendAndAssert(t, 1, "where am I", "still step 1")
+
+	sendAndAssert(t, 2, "шаг 1", "вы классный!", "идите к шагу 2")
 }
 
 func TestLogging(t *testing.T) {
@@ -211,4 +219,11 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	}))
 
 	return srv.Close, srv.URL
+}
+
+func (s *stubTgServer) zero() {
+	s.gotChatID = []int{}
+	s.gotHeader = []string{}
+	s.gotPath = []string{}
+	s.gotText = []string{}
 }
