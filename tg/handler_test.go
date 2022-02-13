@@ -105,7 +105,7 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	str := story.New().
 		Add(story.NewStep().Expect("step 1").Respond("you're great!", "go to step 2").Fail("still step 1")).
 		Add(story.NewStep().Expect("step 2").Respond("go to step 3").Fail("still step 2")).
-		Add(story.NewStep().Expect("step 3").Respond("unloc finish", "no loc finish").Fail("still step 3")).
+		Add(story.NewStep().Expect("step 3").Respond("finish", "non loc finish", "loc finish").Fail("still step 3")).
 		I18n(story.I18nMap{
 			"ru": {
 				"step 1":        "шаг 1",
@@ -113,8 +113,9 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 				"go to step 2":  "идите к шагу 2",
 				"still step 1":  "все еще шаг 1",
 				"step 2":        "шаг 2",
-				"finish":        "финиш",
 				"still step 2":  "все еще шаг 2",
+				"finish":        "финиш",
+				"loc finish":    "loc финиш",
 			},
 		})
 
@@ -163,7 +164,7 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 
 	sendAndAssert(t, 2, "шаг 1", "вы классный!", "идите к шагу 2")
 	sendAndAssert(t, 2, "шаг 2", "go to step 3")
-	sendAndAssert(t, 2, "step 3", "unloc finish")
+	sendAndAssert(t, 2, "step 3", "финиш", "non loc finish", "loc финиш")
 	sendAndAssert(t, 2, "что", "все еще шаг 1")
 }
 

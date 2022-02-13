@@ -32,6 +32,7 @@ func TestSteps(t *testing.T) {
 
 func TestStoryI18N(t *testing.T) {
 	str := story.New().
+		Add(story.NewStep().Expect("somestep").Fail("wrong")).
 		I18n(story.I18nMap{
 			"ru": {
 				story.I18nLanguageChanged: "Язык изменен на русский",
@@ -41,10 +42,16 @@ func TestStoryI18N(t *testing.T) {
 			},
 		})
 
-	assert.Equal(t, "Язык изменен на русский", str.ResponsesWithLangStepTo(0, "", "/ru")[0].Text(), "want language message in Russian %q, got %q")
-	assert.Equal(t, "Язык изменен на казахский", str.ResponsesWithLangStepTo(0, "", "/kk")[0].Text(), "want language message in Kazakh %q, got %q")
-	assert.Equal(t, story.I18nLanguageChanged, str.ResponsesWithLangStepTo(0, "", "/en")[0].Text(), "want language message in English %q, got %q")
-	assert.Equal(t, "Язык изменен на русский", str.ResponsesWithLangStepTo(12, "", "/ru")[0].Text(), "want language message in Russian %q, got %q")
+	assert.Equal(t, "en", str.ResponsesWithLangStepTo(0, "", "say")[0].Lang(), "want English language by default")
+
+	assert.Equal(t, "Язык изменен на русский", str.ResponsesWithLangStepTo(0, "", "/ru")[0].Text(), "want language message in Russian")
+	assert.Equal(t, "ru", str.ResponsesWithLangStepTo(0, "", "/ru")[0].Lang(), "want Russian language")
+
+	assert.Equal(t, "Язык изменен на казахский", str.ResponsesWithLangStepTo(0, "", "/kk")[0].Text(), "want language message in Kazakh")
+	assert.Equal(t, "kk", str.ResponsesWithLangStepTo(0, "", "/kk")[0].Lang(), "want Kazakh language")
+
+	assert.Equal(t, story.I18nLanguageChanged, str.ResponsesWithLangStepTo(0, "", "/en")[0].Text(), "want language message in English")
+	assert.Equal(t, "en", str.ResponsesWithLangStepTo(0, "", "/en")[0].Lang(), "want English language")
 }
 
 func TestSettingLanguageChangesMessage(t *testing.T) {
@@ -61,15 +68,14 @@ func TestSettingLanguageChangesMessage(t *testing.T) {
 			},
 		})
 
-	r := str.ResponsesWithLangStepTo(0, "", "/ru")[0]
-
-	assert.Equal(t, "ru", r.Lang(), "want language %q, got %q")
 	assert.Equal(t, "история 1", str.ResponsesWithLangStepTo(0, "ru", "шаг 1")[0].Text(), "want i18n response %q, got %q")
 
 	// Default line should come out if there is no i18n
 	assert.Equal(t, "story 2", str.ResponsesWithLangStepTo(1, "ru", "шаг 2")[0].Text(), "want i18n default response %q, got %q")
 
 	assert.Equal(t, "введите шаг 3", str.ResponsesWithLangStepTo(2, "ru", "wrong")[0].Text(), "want i18n fail response %q, got %q")
+
+	assert.Equal(t, "ru", str.ResponsesWithLangStepTo(0, "en", "/ru")[0].Lang(), "want i18n successful change")
 }
 
 func TestRespondToSpecificStep(t *testing.T) {
@@ -89,20 +95,6 @@ func TestRespondToSpecificStep(t *testing.T) {
 	t.Run("wrong expectation must not advance the step", func(t *testing.T) {
 		assert.False(t, str.ResponsesWithLangStepTo(5, "", "step 1")[0].ShouldAdvance(), "want ShouldAdvance() = false")
 	})
-}
-
-func TestRespondWithLanguage(t *testing.T) {
-	str := story.New().
-		Add(story.NewStep().Expect("step 1").Respond("that's it").Fail("still step 1")).
-		I18n(story.I18nMap{
-			"ru": {
-				"step 1":    "шаг 1",
-				"that's it": "вот и всё",
-			},
-		})
-
-	assert.Equal(t, "вот и всё", str.ResponsesWithLangStepTo(0, "ru", "шаг 1")[0].Text(), "want i18n successful response")
-	assert.Equal(t, "ru", str.ResponsesWithLangStepTo(0, "en", "/ru")[0].Lang(), "want i18n successful change")
 }
 
 func TestRespondToCommand(t *testing.T) {

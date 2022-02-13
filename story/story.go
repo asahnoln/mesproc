@@ -70,6 +70,10 @@ func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Respon
 }
 
 func (s *Story) parseAndRespond(stp int, lang string, m string) ([]string, string, bool) {
+	if lang == "" {
+		lang = "en"
+	}
+
 	if r, l, ok := s.parseCommand(m); ok {
 		if l != "" {
 			lang = l
