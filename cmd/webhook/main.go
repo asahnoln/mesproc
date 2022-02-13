@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/asahnoln/mesproc/story"
-	"github.com/asahnoln/mesproc/tg"
+	"github.com/asahnoln/mesproc/pkg/story"
+	"github.com/asahnoln/mesproc/pkg/tg"
 )
 
 func loadStory() (*story.Story, error) {
