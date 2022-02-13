@@ -14,6 +14,7 @@ type Step struct {
 	failMessage string
 	isGeo       bool
 	geoExp      [3]float64
+	store       StepStore
 }
 
 // NewStep returns a new Step
@@ -63,6 +64,15 @@ func (s *Step) Fail(e string) *Step {
 func (s *Step) ExpectGeo(lat, lon float64, precision float64) *Step {
 	s.isGeo = true
 	s.geoExp = [3]float64{lat, lon, precision}
+	return s
+}
+
+type StepStore interface {
+	Save(string) error
+}
+
+func (s *Step) ExpectSave(store StepStore) *Step {
+	s.store = store
 	return s
 }
 

@@ -1,10 +1,12 @@
 package story_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/asahnoln/mesproc/story"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestOneStep(t *testing.T) {
@@ -29,12 +31,35 @@ func TestExpectGeoLocation(t *testing.T) {
 	assert.Equal(t, stp.FailMessage(), str.ResponsesWithLangStepTo(0, "", "43.257248572900004,76.92567261243957")[0].Text(), "want fail geo response when far")
 }
 
-// func TestSaveExpectation(t *testing.T) {
-// 	store := &stubStore{}
-// 	stp := story.NewStep().ExpectSave(store).Respond("thank you!")
+// TODO: Merge with error test
+func TestSaveExpectation(t *testing.T) {
+	store := &stubStore{}
+	store.On("Save", "I save this").Return(nil)
 
-// 	str := story.New().Add(stp)
+	stp := story.NewStep().ExpectSave(store).Respond("thank you!").Fail("Shouldn't fail but failed")
+	str := story.New().Add(stp)
 
-// 	assert.Equal(t, stp.Response(), str.RespondWithLangStepTo(0, "", "I save this"), "want response on saving message")
-// 	assert.Equal(t, "I save this", store.message, "want response on saving message")
-// }
+	assert.Equal(t, stp.Response(), str.ResponsesWithLangStepTo(0, "", "I save this")[0].Text(), "want response on saving message")
+	store.AssertExpectations(t)
+}
+
+// TODO: Need to log error
+func TestSaveExpectationError(t *testing.T) {
+	store := &stubStore{}
+	store.On("Save", mock.Anything).Return(errors.New("save fail"))
+
+	stp := story.NewStep().ExpectSave(store).Respond("thank you!").Fail("Try again")
+	str := story.New().Add(stp)
+
+	assert.Equal(t, stp.FailMessage(), str.ResponsesWithLangStepTo(0, "", "Bad will happen")[0].Text(), "want response on saving message")
+	store.AssertExpectations(t)
+}
+
+type stubStore struct {
+	mock.Mock
+}
+
+func (s *stubStore) Save(m string) error {
+	args := s.Called(m)
+	return args.Error(0)
+}

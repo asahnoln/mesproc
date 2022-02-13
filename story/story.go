@@ -106,6 +106,11 @@ func (s *Story) stepResponsesOrFail(m, lang string, stp int) ([]string, bool) {
 }
 
 func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
+	if stp.store != nil {
+		err := stp.store.Save(m)
+		return err == nil
+	}
+
 	if !stp.isGeo {
 		return strings.EqualFold(s.getI18nLine(lang, stp.expectation), m)
 	}
