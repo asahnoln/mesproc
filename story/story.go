@@ -55,10 +55,6 @@ func (s *Story) AddCommand(step *Step) *Story {
 	return s
 }
 
-func (s *Story) RespondWithLangStepTo(stp int, lang string, m string) Response {
-	return s.ResponsesWithLangStepTo(stp, lang, m)[0]
-}
-
 // ResponsesWithLangStepTo return multiple responses from a step with ones
 func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Response {
 	rs, l, ok := s.parseAndRespond(stp, lang, m)

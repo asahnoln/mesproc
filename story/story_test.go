@@ -23,11 +23,11 @@ func TestSteps(t *testing.T) {
 	str.Add(stp1).Add(stp2)
 
 	// TODO: RespondTo has side effects - winding the current step. Should rethink design?
-	assert.Equal(t, stp1.FailMessage(), str.RespondWithLangStepTo(0, "", "smth else").Text(), "want fail response")
-	assert.Equal(t, stp1.Response(), str.RespondWithLangStepTo(0, "", "sector 1").Text(), "want correct response")
+	assert.Equal(t, stp1.FailMessage(), str.ResponsesWithLangStepTo(0, "", "smth else")[0].Text(), "want fail response")
+	assert.Equal(t, stp1.Response(), str.ResponsesWithLangStepTo(0, "", "sector 1")[0].Text(), "want correct response")
 
-	assert.Equal(t, stp2.FailMessage(), str.RespondWithLangStepTo(1, "", "sector 1").Text(), "want response %q, got %q")
-	assert.Equal(t, stp2.Response(), str.RespondWithLangStepTo(1, "", "lulz").Text(), "want response %q, got %q")
+	assert.Equal(t, stp2.FailMessage(), str.ResponsesWithLangStepTo(1, "", "sector 1")[0].Text(), "want response %q, got %q")
+	assert.Equal(t, stp2.Response(), str.ResponsesWithLangStepTo(1, "", "lulz")[0].Text(), "want response %q, got %q")
 }
 
 func TestStoryI18N(t *testing.T) {
@@ -41,10 +41,10 @@ func TestStoryI18N(t *testing.T) {
 			},
 		})
 
-	assert.Equal(t, "Язык изменен на русский", str.RespondWithLangStepTo(0, "", "/ru").Text(), "want language message in Russian %q, got %q")
-	assert.Equal(t, "Язык изменен на казахский", str.RespondWithLangStepTo(0, "", "/kk").Text(), "want language message in Kazakh %q, got %q")
-	assert.Equal(t, story.I18nLanguageChanged, str.RespondWithLangStepTo(0, "", "/en").Text(), "want language message in English %q, got %q")
-	assert.Equal(t, "Язык изменен на русский", str.RespondWithLangStepTo(12, "", "/ru").Text(), "want language message in Russian %q, got %q")
+	assert.Equal(t, "Язык изменен на русский", str.ResponsesWithLangStepTo(0, "", "/ru")[0].Text(), "want language message in Russian %q, got %q")
+	assert.Equal(t, "Язык изменен на казахский", str.ResponsesWithLangStepTo(0, "", "/kk")[0].Text(), "want language message in Kazakh %q, got %q")
+	assert.Equal(t, story.I18nLanguageChanged, str.ResponsesWithLangStepTo(0, "", "/en")[0].Text(), "want language message in English %q, got %q")
+	assert.Equal(t, "Язык изменен на русский", str.ResponsesWithLangStepTo(12, "", "/ru")[0].Text(), "want language message in Russian %q, got %q")
 }
 
 func TestSettingLanguageChangesMessage(t *testing.T) {
@@ -61,15 +61,15 @@ func TestSettingLanguageChangesMessage(t *testing.T) {
 			},
 		})
 
-	r := str.RespondWithLangStepTo(0, "", "/ru")
+	r := str.ResponsesWithLangStepTo(0, "", "/ru")[0]
 
 	assert.Equal(t, "ru", r.Lang(), "want language %q, got %q")
-	assert.Equal(t, "история 1", str.RespondWithLangStepTo(0, "ru", "шаг 1").Text(), "want i18n response %q, got %q")
+	assert.Equal(t, "история 1", str.ResponsesWithLangStepTo(0, "ru", "шаг 1")[0].Text(), "want i18n response %q, got %q")
 
 	// Default line should come out if there is no i18n
-	assert.Equal(t, "story 2", str.RespondWithLangStepTo(1, "ru", "шаг 2").Text(), "want i18n default response %q, got %q")
+	assert.Equal(t, "story 2", str.ResponsesWithLangStepTo(1, "ru", "шаг 2")[0].Text(), "want i18n default response %q, got %q")
 
-	assert.Equal(t, "введите шаг 3", str.RespondWithLangStepTo(2, "ru", "wrong").Text(), "want i18n fail response %q, got %q")
+	assert.Equal(t, "введите шаг 3", str.ResponsesWithLangStepTo(2, "ru", "wrong")[0].Text(), "want i18n fail response %q, got %q")
 }
 
 func TestRespondToSpecificStep(t *testing.T) {
@@ -78,16 +78,16 @@ func TestRespondToSpecificStep(t *testing.T) {
 		Add(story.NewStep().Expect("step 2").Respond("finish").Fail("still step 2"))
 
 	t.Run("step rotates if out of range", func(t *testing.T) {
-		assert.Equal(t, "go to step 2", str.RespondWithLangStepTo(2, "", "step 1").Text(), "want response %q, got %q")
-		assert.Equal(t, "still step 2", str.RespondWithLangStepTo(3, "", "wrong step").Text(), "want response %q, got %q")
+		assert.Equal(t, "go to step 2", str.ResponsesWithLangStepTo(2, "", "step 1")[0].Text(), "want response %q, got %q")
+		assert.Equal(t, "still step 2", str.ResponsesWithLangStepTo(3, "", "wrong step")[0].Text(), "want response %q, got %q")
 	})
 
 	t.Run("successful response should advance the step", func(t *testing.T) {
-		assert.True(t, str.RespondWithLangStepTo(4, "", "step 1").ShouldAdvance(), "want ShouldAdvance() = true")
+		assert.True(t, str.ResponsesWithLangStepTo(4, "", "step 1")[0].ShouldAdvance(), "want ShouldAdvance() = true")
 	})
 
 	t.Run("wrong expectation must not advance the step", func(t *testing.T) {
-		assert.False(t, str.RespondWithLangStepTo(5, "", "step 1").ShouldAdvance(), "want ShouldAdvance() = false")
+		assert.False(t, str.ResponsesWithLangStepTo(5, "", "step 1")[0].ShouldAdvance(), "want ShouldAdvance() = false")
 	})
 }
 
@@ -101,8 +101,8 @@ func TestRespondWithLanguage(t *testing.T) {
 			},
 		})
 
-	assert.Equal(t, "вот и всё", str.RespondWithLangStepTo(0, "ru", "шаг 1").Text(), "want i18n successful response")
-	assert.Equal(t, "ru", str.RespondWithLangStepTo(0, "en", "/ru").Lang(), "want i18n successful change")
+	assert.Equal(t, "вот и всё", str.ResponsesWithLangStepTo(0, "ru", "шаг 1")[0].Text(), "want i18n successful response")
+	assert.Equal(t, "ru", str.ResponsesWithLangStepTo(0, "en", "/ru")[0].Lang(), "want i18n successful change")
 }
 
 func TestRespondToCommand(t *testing.T) {
@@ -114,9 +114,9 @@ func TestRespondToCommand(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, stp.Response(), str.RespondWithLangStepTo(5, "", "/command").Text(), "want response %q, got %q")
+	assert.Equal(t, stp.Response(), str.ResponsesWithLangStepTo(5, "", "/command")[0].Text(), "want response %q, got %q")
 
-	assert.Equal(t, "это была команда", str.RespondWithLangStepTo(6, "ru", "/command").Text(), "want response %q, got %q")
+	assert.Equal(t, "это была команда", str.ResponsesWithLangStepTo(6, "ru", "/command")[0].Text(), "want response %q, got %q")
 }
 
 func TestLoadingFromJSON(t *testing.T) {
@@ -129,12 +129,12 @@ func TestLoadingFromJSON(t *testing.T) {
 	str, err := story.Load(f)
 	require.NoError(t, err, "unexpected error when loading proper JSON for the story")
 
-	assert.Equal(t, "still at step 1", str.RespondWithLangStepTo(0, "", "help").Text(), "want fail message in response to wrong expectation")
-	assert.Equal(t, "now at step 2", str.RespondWithLangStepTo(0, "", "go to step 2").Text(), "want response message to expectation")
-	assert.Equal(t, "proper geo", str.RespondWithLangStepTo(1, "", "43.257081,76.924835").Text(), "want successfule response to approximate (50m) geo expectation")
-	assert.Equal(t, "now finished", str.RespondWithLangStepTo(2, "", "finish").Text(), "want response message to final expectation")
+	assert.Equal(t, "still at step 1", str.ResponsesWithLangStepTo(0, "", "help")[0].Text(), "want fail message in response to wrong expectation")
+	assert.Equal(t, "now at step 2", str.ResponsesWithLangStepTo(0, "", "go to step 2")[0].Text(), "want response message to expectation")
+	assert.Equal(t, "proper geo", str.ResponsesWithLangStepTo(1, "", "43.257081,76.924835")[0].Text(), "want successfule response to approximate (50m) geo expectation")
+	assert.Equal(t, "now finished", str.ResponsesWithLangStepTo(2, "", "finish")[0].Text(), "want response message to final expectation")
 
-	assert.Equal(t, "let's start", str.RespondWithLangStepTo(99, "", "/start").Text(), "want response message to command")
+	assert.Equal(t, "let's start", str.ResponsesWithLangStepTo(99, "", "/start")[0].Text(), "want response message to command")
 
 	rs := str.ResponsesWithLangStepTo(3, "", "multi")
 	assert.Len(t, rs, 3, "want multi response step")
@@ -149,7 +149,7 @@ func TestErrorLoadingFromJSON(t *testing.T) {
 func TestExpectationCaseInsensitive(t *testing.T) {
 	str := story.New().Add(story.NewStep().Expect("LOL this GOOD").Respond("success!").Fail("failed"))
 
-	assert.Equal(t, "success!", str.RespondWithLangStepTo(0, "", "lOl ThIs GoOd").Text(), "want case-insensitive expectation")
+	assert.Equal(t, "success!", str.ResponsesWithLangStepTo(0, "", "lOl ThIs GoOd")[0].Text(), "want case-insensitive expectation")
 }
 
 func TestSeveralResponses(t *testing.T) {
