@@ -112,24 +112,32 @@ func TestRespondToCommand(t *testing.T) {
 }
 
 func TestLoadingFromJSON(t *testing.T) {
+	err := os.Mkdir("testdata/save", 0755)
+	require.NoError(t, err, "unexpected error creating test dir")
+	defer os.RemoveAll("testdata/save")
+
 	f, err := os.Open("testdata/story.json")
 	require.NoError(t, err, "unexpected error loading test file")
 	defer f.Close()
 
-	require.NoError(t, err, "error opening file")
-
 	str, err := story.Load(f)
 	require.NoError(t, err, "unexpected error when loading proper JSON for the story")
 
+	// Usual
 	assert.Equal(t, "still at step 1", str.ResponsesWithLangStepTo(0, "", "help")[0].Text(), "want fail message in response to wrong expectation")
 	assert.Equal(t, "now at step 2", str.ResponsesWithLangStepTo(0, "", "go to step 2")[0].Text(), "want response message to expectation")
 	assert.Equal(t, "proper geo", str.ResponsesWithLangStepTo(1, "", "43.257081,76.924835")[0].Text(), "want successfule response to approximate (50m) geo expectation")
 	assert.Equal(t, "now finished", str.ResponsesWithLangStepTo(2, "", "finish")[0].Text(), "want response message to final expectation")
 
+	// Commands
 	assert.Equal(t, "let's start", str.ResponsesWithLangStepTo(99, "", "/start")[0].Text(), "want response message to command")
 
+	// Multi
 	rs := str.ResponsesWithLangStepTo(3, "", "multi")
 	assert.Len(t, rs, 3, "want multi response step")
+
+	// Testing saving
+	assert.Equal(t, "saved!", str.ResponsesWithLangStepTo(4, "", "I want this saved")[0].Text(), "want response message to saving expectation")
 }
 
 func TestErrorLoadingFromJSON(t *testing.T) {

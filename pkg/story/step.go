@@ -3,6 +3,8 @@ package story
 import (
 	"fmt"
 	"math"
+
+	"github.com/asahnoln/mesproc/pkg/store"
 )
 
 // Step is a building block of a story.
@@ -14,7 +16,7 @@ type Step struct {
 	failMessage string
 	isGeo       bool
 	geoExp      [3]float64
-	store       StepStore
+	store       store.Step
 }
 
 // NewStep returns a new Step
@@ -67,13 +69,8 @@ func (s *Step) ExpectGeo(lat, lon float64, precision float64) *Step {
 	return s
 }
 
-// StepStore is a store for saving messages
-type StepStore interface {
-	Save(string) error
-}
-
 // ExpectSave prepares the step to save incoming message
-func (s *Step) ExpectSave(store StepStore) *Step {
+func (s *Step) ExpectSave(store store.Step) *Step {
 	s.store = store
 	return s
 }

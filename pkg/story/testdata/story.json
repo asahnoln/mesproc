@@ -27,5 +27,10 @@
     "expect": "multi",
     "responses": ["first", "second", "third"],
     "fail": "failed multi"
+  },
+  {
+    "expectSave": "testdata/save",
+    "response": "saved!",
+    "fail": "didn't save"
   }
 ]

@@ -3,6 +3,8 @@ package story
 import (
 	"encoding/json"
 	"io"
+
+	"github.com/asahnoln/mesproc/pkg/store"
 )
 
 // JSONExpectGeo is a struct for json geo expectation
@@ -13,12 +15,13 @@ type JSONExpectGeo struct {
 
 // JSONStep is a struct for step in JSON file
 type JSONStep struct {
-	Command   bool
-	Expect    *string
-	Response  *string
-	Fail      string
-	Responses []string
-	ExpectGeo *JSONExpectGeo
+	Command    bool
+	Expect     *string
+	Response   *string
+	Fail       string
+	Responses  []string
+	ExpectGeo  *JSONExpectGeo
+	ExpectSave *string
 }
 
 // Load loads story steps from given JSON file. Structure should be as follows:
@@ -66,10 +69,13 @@ func Load(r io.Reader) (*Story, error) {
 			step.Respond(ss.Responses...)
 		}
 
-		if ss.Expect != nil {
+		switch {
+		case ss.Expect != nil:
 			step = step.Expect(*ss.Expect)
-		} else {
+		case ss.ExpectGeo != nil:
 			step = step.ExpectGeo(ss.ExpectGeo.Lat, ss.ExpectGeo.Lon, ss.ExpectGeo.Precision)
+		case ss.ExpectSave != nil:
+			step = step.ExpectSave(store.NewFile(*ss.ExpectSave))
 		}
 
 		if ss.Command {
