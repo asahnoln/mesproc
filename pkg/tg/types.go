@@ -33,3 +33,39 @@ type SendAudio struct {
 	ChatID int    `json:"chat_id"`
 	Audio  string `json:"audio"`
 }
+
+// SendChatAction is an object used to send a chat action to a bot
+type SendChatAction struct {
+	ChatID int    `json:"chat_id"`
+	Action string `json:"action"`
+}
+
+// SetChatID sets chat ID for current sender
+func (s *SendAudio) SetChatID(i int) {
+	s.ChatID = i
+}
+
+// SetContent sets content for current sender
+func (s *SendAudio) SetContent(a string) {
+	s.Audio = a
+}
+
+// URL returns Telegram endpoint to process current sender
+func (s *SendAudio) URL() string {
+	return "/sendAudio"
+}
+
+// SetChatID sets chat ID for current sender
+func (s *SendMessage) SetChatID(i int) {
+	s.ChatID = i
+}
+
+// SetContent sets content for current sender
+func (s *SendMessage) SetContent(a string) {
+	s.Text = a
+}
+
+// URL returns Telegram endpoint to process current sender
+func (s *SendMessage) URL() string {
+	return "/sendMessage"
+}

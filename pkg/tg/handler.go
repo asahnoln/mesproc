@@ -78,12 +78,24 @@ func (h *Handler) send(u Update) {
 		v := figureSenderType(r.Text())
 		v.SetChatID(id)
 
+		h.before(v)
+
 		// TODO: Handle error
 		m, _ := json.Marshal(v)
 		http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 	}
 
 	h.updateUsrCfg(id, usrCfg, rs[0])
+}
+
+func (h *Handler) before(v Sender) {
+	if a, ok := v.(*SendAudio); ok {
+		m, _ := json.Marshal(SendChatAction{
+			ChatID: a.ChatID,
+			Action: "upload_document",
+		})
+		http.Post(h.target+"/sendChatAction", "application/json", bytes.NewReader(m))
+	}
 }
 
 func (h *Handler) updateUsrCfg(id int, u usrCfg, r story.Response) {
@@ -119,34 +131,4 @@ func figureSenderType(text string) Sender {
 	v.SetContent(text)
 
 	return v
-}
-
-// SetChatID sets chat ID for current sender
-func (s *SendAudio) SetChatID(i int) {
-	s.ChatID = i
-}
-
-// SetContent sets content for current sender
-func (s *SendAudio) SetContent(a string) {
-	s.Audio = a
-}
-
-// URL returns Telegram endpoint to process current sender
-func (s *SendAudio) URL() string {
-	return "/sendAudio"
-}
-
-// SetChatID sets chat ID for current sender
-func (s *SendMessage) SetChatID(i int) {
-	s.ChatID = i
-}
-
-// SetContent sets content for current sender
-func (s *SendMessage) SetContent(a string) {
-	s.Text = a
-}
-
-// URL returns Telegram endpoint to process current sender
-func (s *SendMessage) URL() string {
-	return "/sendMessage"
 }

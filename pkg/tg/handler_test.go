@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -24,9 +23,8 @@ type stubTgServer struct {
 
 func TestHandler(t *testing.T) {
 	tests := []struct {
-		step           *story.Step
-		update         tg.Update
-		tgServerTarget string
+		step   *story.Step
+		update tg.Update
 	}{
 		{story.NewStep().Expect("want this").Respond("standard respond"),
 			tg.Update{
@@ -36,7 +34,8 @@ func TestHandler(t *testing.T) {
 					},
 					Text: "want this",
 				},
-			}, "/sendMessage"},
+			},
+		},
 		{story.NewStep().Expect("want multi").Respond("first", "second"),
 			tg.Update{
 				Message: tg.Message{
@@ -45,16 +44,8 @@ func TestHandler(t *testing.T) {
 					},
 					Text: "want multi",
 				},
-			}, "/sendMessage"},
-		{story.NewStep().Expect("want audio").Respond("audio:http://example.com/audio.mp3"),
-			tg.Update{
-				Message: tg.Message{
-					Chat: tg.Chat{
-						ID: 187,
-					},
-					Text: "want audio",
-				},
-			}, "/sendAudio"},
+			},
+		},
 		{story.NewStep().ExpectGeo(43, 75, 0).Respond("good").Fail("not good"),
 			tg.Update{
 				Message: tg.Message{
@@ -66,7 +57,7 @@ func TestHandler(t *testing.T) {
 						Longitude: 75,
 					},
 				},
-			}, "/sendMessage",
+			},
 		},
 	}
 
@@ -75,7 +66,7 @@ func TestHandler(t *testing.T) {
 		close, target := stg.tgServerMockURL()
 		defer close()
 
-		t.Run(fmt.Sprintf("%q to %q", tt.step.Responses(), tt.tgServerTarget), func(t *testing.T) {
+		t.Run(tt.step.Response(), func(t *testing.T) {
 			str := story.New().Add(tt.step)
 			th := tg.New(target, str, nil)
 
@@ -91,14 +82,45 @@ func TestHandler(t *testing.T) {
 			require.Len(t, stg.gotText, len(rs), "want the same count of requests to tg server as responses")
 
 			for i, r := range rs {
-				assert.Equal(t, tt.tgServerTarget, stg.gotPath[i], "want tg service right path")
+				assert.Equal(t, "/sendMessage", stg.gotPath[i], "want tg service right path")
 				assert.Equal(t, "application/json", stg.gotHeader[i], "want tg service right header")
-				assert.Equal(t, strings.TrimPrefix(r, tg.PrefixAudio), stg.gotText[i], "want tg service receiving right message")
+				assert.Equal(t, r, stg.gotText[i], "want tg service receiving right message")
 				assert.Equal(t, tt.update.Message.Chat.ID, stg.gotChatID[i], "want tg service receiving right chat")
 			}
 		})
 
 	}
+}
+
+func TestAudio(t *testing.T) {
+	str := story.New().Add(story.NewStep().Respond("audio:http://example.com/audio.mp3").Expect("music").Fail("wrong"))
+	stg := &stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	th := tg.New(target, str, nil)
+
+	body, _ := json.Marshal(tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 6,
+			},
+			Text: "music",
+		},
+	})
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+
+	assert.Equal(t, "/sendChatAction", stg.gotPath[0], "want first to be sent - chat action")
+	assert.Equal(t, "application/json", stg.gotHeader[0])
+	assert.Equal(t, 6, stg.gotChatID[0])
+	assert.Equal(t, "upload_document", stg.gotText[0])
+
+	assert.Equal(t, "/sendAudio", stg.gotPath[1], "want second to be sent - audio")
+	assert.Equal(t, "application/json", stg.gotHeader[1])
+	assert.Equal(t, 6, stg.gotChatID[1])
+	assert.Equal(t, "http://example.com/audio.mp3", stg.gotText[1])
 }
 
 func TestDifferentUsersStepsAndLangs(t *testing.T) {
@@ -228,6 +250,11 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 			var m tg.SendAudio
 			json.NewDecoder(r.Body).Decode(&m)
 			fillData(m.ChatID, m.Audio, r)
+		})
+		mux.HandleFunc("/sendChatAction", func(w http.ResponseWriter, r *http.Request) {
+			var m tg.SendChatAction
+			json.NewDecoder(r.Body).Decode(&m)
+			fillData(m.ChatID, m.Action, r)
 		})
 
 		mux.ServeHTTP(w, r)
