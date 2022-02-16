@@ -150,22 +150,32 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 		stg.zero()
 	}
 
-	// Tested different steps for users
-	sendAndAssert(t, 1, "step 1", "you're great!", "go to step 2")
-	sendAndAssert(t, 2, "wrong step", "still step 1")
+	tests := []struct {
+		id        int
+		message   string
+		responses []string
+	}{
+		// Tested different steps for users
+		{1, "step 1", []string{"you're great!", "go to step 2"}},
+		{2, "wrong step", []string{"still step 1"}},
 
-	// Testing different languages
-	sendAndAssert(t, 1, "step 2", "go to step 3")
+		// Testing different languages
+		{1, "step 2", []string{"go to step 3"}},
 
-	sendAndAssert(t, 2, "/ru", "Language changed")
-	sendAndAssert(t, 2, "неверно", "все еще шаг 1")
+		{2, "/ru", []string{"Language changed"}},
+		{2, "неверно", []string{"все еще шаг 1"}},
 
-	sendAndAssert(t, 1, "where am I", "still step 3")
+		{1, "where am I", []string{"still step 3"}},
 
-	sendAndAssert(t, 2, "шаг 1", "вы классный!", "идите к шагу 2")
-	sendAndAssert(t, 2, "шаг 2", "go to step 3")
-	sendAndAssert(t, 2, "step 3", "финиш", "non loc finish", "loc финиш")
-	sendAndAssert(t, 2, "что", "все еще шаг 1")
+		{2, "шаг 1", []string{"вы классный!", "идите к шагу 2"}},
+		{2, "шаг 2", []string{"go to step 3"}},
+		{2, "step 3", []string{"финиш", "non loc finish", "loc финиш"}},
+		{2, "что", []string{"все еще шаг 1"}},
+	}
+
+	for _, tt := range tests {
+		sendAndAssert(t, tt.id, tt.message, tt.responses...)
+	}
 }
 
 func TestLogging(t *testing.T) {
