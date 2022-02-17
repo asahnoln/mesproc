@@ -15,14 +15,14 @@ This one follows the script - what to receive and how to respond to given messag
 *** DONE Story expecting geo location
 *** DONE Checking for geo location in Tg
 *** DONE Use JSON file to build a story
-*** TODO Saving user responses
+*** DONE Saving user responses
 *** TODO Send message after some time
 *** DONE Send default "Language changed" in English when no i18n set
 *** TODO Send back previous step when changing language
-*** TODO Different responses to old requests according to current step in the story
-*** TODO Sending several messages
+*** DONE Different responses to old requests according to current step in the story
+*** DONE Sending several messages
 *** TODO Test for json tags?
 *** DONE Logging requests
-*** TODO Logging responses
+*** DONE Logging responses
 *** PROJ Unhappy Path
 **** TODO Store Respond when no steps
