@@ -10,11 +10,16 @@ type Chat struct {
 	ID int
 }
 
+type From struct {
+	LanguageCode string `json:"language_code"`
+}
+
 // Message is a subobject of Update object with info on received message
 type Message struct {
 	Chat     Chat
 	Text     string
 	Location *Location
+	From     From
 }
 
 // Location is a subobject of Message object with info on sent geolocation

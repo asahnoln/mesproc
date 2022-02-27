@@ -72,6 +72,9 @@ func (h *Handler) logIncoming(u Update) {
 func (h *Handler) send(u Update) {
 	id := u.Message.Chat.ID
 	usrCfg := h.usrCfgs[id]
+	if usrCfg.lang == "" {
+		usrCfg.lang = u.Message.From.LanguageCode
+	}
 
 	rs := h.str.ResponsesWithLangStepTo(usrCfg.step, usrCfg.lang, convertText(u))
 	rs, translated := h.translateLastResponses(usrCfg, rs)

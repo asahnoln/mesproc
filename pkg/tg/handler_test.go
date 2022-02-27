@@ -238,6 +238,41 @@ func TestLogging(t *testing.T) {
 	assert.Contains(t, b.String(), time.Now().Format(time.RFC3339), "want logged date on receiving")
 }
 
+func TestLanguageFromTgCode(t *testing.T) {
+	stg := &stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	str := story.New().
+		Add(story.NewStep().Expect("Hi!").Respond("nice").Fail("wrong")).
+		I18n(story.I18nMap{
+			"ru": {
+				"nice": "отлично",
+			},
+		})
+
+	obj := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 657,
+			},
+			Text: "Hi!",
+			From: tg.From{
+				LanguageCode: "ru",
+			},
+		},
+	}
+	body, _ := json.Marshal(obj)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(body))
+
+	th := tg.New(target, str, nil)
+	th.ServeHTTP(w, r)
+
+	assert.Equal(t, "отлично", stg.gotText[0], "want immediately russian text because of language code")
+}
+
 // func TestLaterMessage(t *testing.T) {
 // 	str := story.New().Add(story.NewStep().Expect("message").LateRespond("okay", time.Second*0))
 // 	stg := &stubTgServer{}
