@@ -130,14 +130,15 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 		Add(story.NewStep().Expect("step 3").Respond("finish", "non loc finish", "loc finish").Fail("still step 3")).
 		I18n(story.I18nMap{
 			"ru": {
-				"step 1":        "шаг 1",
-				"you're great!": "вы классный!",
-				"go to step 2":  "идите к шагу 2",
-				"still step 1":  "все еще шаг 1",
-				"step 2":        "шаг 2",
-				"still step 2":  "все еще шаг 2",
-				"finish":        "финиш",
-				"loc finish":    "loc финиш",
+				"step 1":                  "шаг 1",
+				"you're great!":           "вы классный!",
+				"go to step 2":            "идите к шагу 2",
+				"still step 1":            "все еще шаг 1",
+				"step 2":                  "шаг 2",
+				"still step 2":            "все еще шаг 2",
+				"finish":                  "финиш",
+				"loc finish":              "loc финиш",
+				story.I18nLanguageChanged: "Язык изменен",
 			},
 		})
 
@@ -184,19 +185,24 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 		// Testing different languages
 		{1, "step 2", []string{"go to step 3"}},
 
-		{2, "/ru", []string{"Language changed"}},
+		// Previous response translated
+		{2, "/ru", []string{"все еще шаг 1"}},
 		{2, "неверно", []string{"все еще шаг 1"}},
 
 		{1, "where am I", []string{"still step 3"}},
 
 		{2, "шаг 1", []string{"вы классный!", "идите к шагу 2"}},
+		{2, "/en", []string{"you're great!", "go to step 2"}},
+		{2, "/ru", []string{"вы классный!", "идите к шагу 2"}},
 		{2, "шаг 2", []string{"go to step 3"}},
 		{2, "step 3", []string{"финиш", "non loc finish", "loc финиш"}},
 		{2, "что", []string{"все еще шаг 1"}},
 	}
 
 	for _, tt := range tests {
-		sendAndAssert(t, tt.id, tt.message, tt.responses...)
+		t.Run(fmt.Sprintf("User %d: %q", tt.id, tt.message), func(t *testing.T) {
+			sendAndAssert(t, tt.id, tt.message, tt.responses...)
+		})
 	}
 }
 
@@ -231,6 +237,19 @@ func TestLogging(t *testing.T) {
 	assert.Contains(t, b.String(), fmt.Sprintf("%#v", obj), "want logged update object on receiving")
 	assert.Contains(t, b.String(), time.Now().Format(time.RFC3339), "want logged date on receiving")
 }
+
+// func TestLaterMessage(t *testing.T) {
+// 	str := story.New().Add(story.NewStep().Expect("message").LateRespond("okay", time.Second*0))
+// 	stg := &stubTgServer{}
+// 	close, target := stg.tgServerMockURL()
+// 	defer close()
+
+// 	th := tg.New(target, str, nil)
+
+// 	w := httptest.NewRecorder()
+// 	r := httptest.NewRequest(http.MethodPost, "/", nil)
+// 	th.ServeHTTP(w, r)
+// }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

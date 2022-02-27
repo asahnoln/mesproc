@@ -19,8 +19,9 @@ const (
 )
 
 type usrCfg struct {
-	step int
-	lang string
+	step   int
+	lang   string
+	lastRs []story.Response
 }
 
 // Handler is a Telegram handler, which implements receiving messages from a bot and sending them back
@@ -73,6 +74,7 @@ func (h *Handler) send(u Update) {
 	usrCfg := h.usrCfgs[id]
 
 	rs := h.str.ResponsesWithLangStepTo(usrCfg.step, usrCfg.lang, convertText(u))
+	rs, translated := h.translateLastResponses(usrCfg, rs)
 
 	for _, r := range rs {
 		v := figureSenderType(r.Text())
@@ -85,7 +87,15 @@ func (h *Handler) send(u Update) {
 		http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 	}
 
-	h.updateUsrCfg(id, usrCfg, rs[0])
+	usrCfg.lastRs = rs
+	h.updateUsrCfg(id, usrCfg, rs[0], translated)
+}
+
+func (h *Handler) translateLastResponses(u usrCfg, rs []story.Response) ([]story.Response, bool) {
+	if u.lastRs != nil && rs[0].Lang() != u.lang {
+		return h.str.I18nMap().Translate(u.lastRs, rs[0].Lang()), true
+	}
+	return rs, false
 }
 
 func (h *Handler) before(v Sender) {
@@ -98,8 +108,8 @@ func (h *Handler) before(v Sender) {
 	}
 }
 
-func (h *Handler) updateUsrCfg(id int, u usrCfg, r story.Response) {
-	if r.ShouldAdvance() {
+func (h *Handler) updateUsrCfg(id int, u usrCfg, r story.Response, translated bool) {
+	if r.ShouldAdvance() && !translated {
 		u.step++
 	}
 	u.lang = r.Lang()

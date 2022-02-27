@@ -23,5 +23,24 @@ func LoadI18n(r io.Reader) (I18nMap, error) {
 
 // Line returns a translated line from I18n
 func (m I18nMap) Line(line, lang string) string {
-	return m[lang][line]
+	l, ok := m[lang][line]
+	if !ok {
+		return line
+	}
+
+	return l
+}
+
+func (m I18nMap) Translate(rs []Response, lang string) []Response {
+	result := make([]Response, len(rs))
+
+	for i, r := range rs {
+		result[i] = Response{
+			original:      r.original,
+			text:          m.Line(r.original, lang),
+			lang:          lang,
+			shouldAdvance: r.shouldAdvance,
+		}
+	}
+	return result
 }

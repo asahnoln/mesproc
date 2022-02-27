@@ -20,9 +20,29 @@ func TestI18nLoadingFromJSON(t *testing.T) {
 	require.NoError(t, err, "unexpected error while loading file into i18n")
 
 	assert.Equal(t, "шаг 1", i18n.Line("step 1", "ru"), "want russian translation")
+	assert.Equal(t, "doesn't exist", i18n.Line("doesn't exist", "ru"), "want default translation")
 }
 
 func TestI18nLoadingError(t *testing.T) {
 	_, err := story.LoadI18n(strings.NewReader(""))
 	require.Error(t, err, "want error when nothing to load from")
+}
+
+func TestI18nTranslateResponses(t *testing.T) {
+	str := story.New().
+		Add(story.NewStep().Expect("message").Respond("one", "two").Fail("fail")).
+		I18n(story.I18nMap{
+			"ru": {
+				"one": "один",
+				"two": "два",
+			},
+		})
+
+	rs := str.ResponsesWithLangStepTo(0, "ru", "message")
+
+	localized := str.I18nMap().Translate(rs, "en")
+
+	assert.Len(t, localized, 2, "want same count of translated responses")
+	assert.Equal(t, "en", localized[0].Lang(), "want Russian language responses")
+	assert.Equal(t, "one", localized[0].Text())
 }

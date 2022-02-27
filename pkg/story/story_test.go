@@ -45,7 +45,7 @@ func TestStoryI18N(t *testing.T) {
 	assert.Equal(t, "en", str.ResponsesWithLangStepTo(0, "", "say")[0].Lang(), "want English language by default")
 
 	assert.Equal(t, "Язык изменен на русский", str.ResponsesWithLangStepTo(0, "", "/ru")[0].Text(), "want language message in Russian")
-	assert.Equal(t, "ru", str.ResponsesWithLangStepTo(0, "", "/ru")[0].Lang(), "want Russian language")
+	assert.Equal(t, "ru", str.ResponsesWithLangStepTo(0, "en", "/ru")[0].Lang(), "want Russian language")
 
 	assert.Equal(t, "Язык изменен на казахский", str.ResponsesWithLangStepTo(0, "", "/kk")[0].Text(), "want language message in Kazakh")
 	assert.Equal(t, "kk", str.ResponsesWithLangStepTo(0, "", "/kk")[0].Lang(), "want Kazakh language")

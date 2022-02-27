@@ -6,8 +6,8 @@ import (
 
 // Response is a struct which story returns in response to a message
 type Response struct {
-	text, lang    string
-	shouldAdvance bool
+	original, text, lang string
+	shouldAdvance        bool
 }
 
 // Text returns text of response
@@ -62,7 +62,10 @@ func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Respon
 	result := make([]Response, len(rs))
 	for i, r := range rs {
 		result[i] = Response{
-			text:          r,
+			original: r,
+			// TODO: Actually there is translation of tranlsation sometimes right now
+			// TODO: Should clean insided from parseAndRespond
+			text:          s.i18n.Line(r, lang),
 			shouldAdvance: ok,
 			lang:          l,
 		}
@@ -83,13 +86,17 @@ func (s *Story) parseAndRespond(stp int, lang string, m string) ([]string, strin
 	}
 
 	r, ok := s.stepResponsesOrFail(m, lang, s.rotateStep(stp))
-	return s.getI18nLines(lang, r), lang, ok
+	return r, lang, ok
 }
 
 // I18n sets i18n localzation for the story
 func (s *Story) I18n(i I18nMap) *Story {
 	s.i18n = i
 	return s
+}
+
+func (s *Story) I18nMap() I18nMap {
+	return s.i18n
 }
 
 func (s *Story) rotateStep(stp int) int {
