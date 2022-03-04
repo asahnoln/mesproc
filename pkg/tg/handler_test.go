@@ -273,18 +273,38 @@ func TestLanguageFromTgCode(t *testing.T) {
 	assert.Equal(t, "отлично", stg.gotText[0], "want immediately russian text because of language code")
 }
 
-// func TestLaterMessage(t *testing.T) {
-// 	str := story.New().Add(story.NewStep().Expect("message").LateRespond("okay", time.Second*0))
-// 	stg := &stubTgServer{}
-// 	close, target := stg.tgServerMockURL()
-// 	defer close()
+func TestLaterMessage(t *testing.T) {
+	stg := &stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
 
-// 	th := tg.New(target, str, nil)
+	str := story.New().
+		Add(story.NewStep().
+			Expect("want late").
+			Respond("first", "late").
+			Fail("fail").
+			Additional(1, "time", time.Millisecond*100))
+	th := tg.New(target, str, nil)
 
-// 	w := httptest.NewRecorder()
-// 	r := httptest.NewRequest(http.MethodPost, "/", nil)
-// 	th.ServeHTTP(w, r)
-// }
+	obj := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 657,
+			},
+			Text: "want late",
+		},
+	}
+	body, _ := json.Marshal(obj)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+
+	// TODO: Should not wait for real
+	assert.Len(t, stg.gotText, 1)
+	time.Sleep(time.Millisecond * 101)
+	assert.Len(t, stg.gotText, 2)
+}
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

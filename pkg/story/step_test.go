@@ -55,6 +55,18 @@ func TestSaveExpectationError(t *testing.T) {
 	store.AssertExpectations(t)
 }
 
+func TestAdditional(t *testing.T) {
+	str := story.New().
+		Add(story.NewStep().Expect("message").Respond("one", "two").Fail("fail").
+			Additional(1, "field", "value"))
+
+	rs := str.ResponsesWithLangStepTo(0, "", "message")
+
+	_, ok := rs[0].Additional["field"]
+	assert.False(t, ok, "want no `field` value at first step")
+	assert.Equal(t, "value", rs[1].Additional["field"])
+}
+
 type stubStore struct {
 	mock.Mock
 }

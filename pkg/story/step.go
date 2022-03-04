@@ -17,6 +17,7 @@ type Step struct {
 	isGeo       bool
 	geoExp      [3]float64
 	store       store.Step
+	additional  map[int]map[string]interface{}
 }
 
 // NewStep returns a new Step
@@ -72,6 +73,18 @@ func (s *Step) ExpectGeo(lat, lon float64, precision float64) *Step {
 // ExpectSave prepares the step to save incoming message
 func (s *Step) ExpectSave(store store.Step) *Step {
 	s.store = store
+	return s
+}
+
+func (s *Step) Additional(step int, field string, value interface{}) *Step {
+	if s.additional == nil {
+		s.additional = make(map[int]map[string]interface{})
+	}
+	if s.additional[step] == nil {
+		s.additional[step] = make(map[string]interface{})
+	}
+
+	s.additional[step][field] = value
 	return s
 }
 

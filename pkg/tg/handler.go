@@ -80,18 +80,30 @@ func (h *Handler) send(u Update) {
 	rs, translated := h.translateLastResponses(usrCfg, rs)
 
 	for _, r := range rs {
-		v := figureSenderType(r.Text())
-		v.SetChatID(id)
+		if t, ok := r.Additional["time"]; ok {
+			go func() {
+				time.Sleep(t.(time.Duration))
+				h.sendResponse(r, id)
+			}()
+		} else {
+			h.sendResponse(r, id)
+		}
 
-		h.before(v)
-
-		// TODO: Handle error
-		m, _ := json.Marshal(v)
-		http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 	}
 
 	usrCfg.lastRs = rs
 	h.updateUsrCfg(id, usrCfg, rs[0], translated)
+}
+
+func (h *Handler) sendResponse(r story.Response, id int) {
+	v := figureSenderType(r.Text())
+	v.SetChatID(id)
+
+	h.before(v)
+
+	// TODO: Handle error
+	m, _ := json.Marshal(v)
+	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 }
 
 func (h *Handler) translateLastResponses(u usrCfg, rs []story.Response) ([]story.Response, bool) {

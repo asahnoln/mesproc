@@ -6,6 +6,8 @@ import (
 
 // Response is a struct which story returns in response to a message
 type Response struct {
+	Additional map[string]interface{}
+
 	original, text, lang string
 	shouldAdvance        bool
 }
@@ -68,6 +70,10 @@ func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Respon
 			text:          s.i18n.Line(r, lang),
 			shouldAdvance: ok,
 			lang:          l,
+		}
+
+		if len(s.steps) > 0 {
+			result[i].Additional = s.steps[s.rotateStep(stp)].additional[i]
 		}
 	}
 	return result
