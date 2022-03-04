@@ -26,6 +26,9 @@
   {
     "expect": "multi",
     "responses": ["first", "second", "third"],
+    "later": {
+      "2": 600
+    },
     "fail": "failed multi"
   },
   {

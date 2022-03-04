@@ -3,6 +3,7 @@ package story
 import (
 	"encoding/json"
 	"io"
+	"time"
 
 	"github.com/asahnoln/mesproc/pkg/store"
 )
@@ -22,6 +23,7 @@ type JSONStep struct {
 	Responses  []string
 	ExpectGeo  *JSONExpectGeo
 	ExpectSave *string
+	Later      map[int]time.Duration
 }
 
 // Load loads story steps from given JSON file. Structure should be as follows:
@@ -76,6 +78,12 @@ func Load(r io.Reader) (*Story, error) {
 			step = step.ExpectGeo(ss.ExpectGeo.Lat, ss.ExpectGeo.Lon, ss.ExpectGeo.Precision)
 		case ss.ExpectSave != nil:
 			step = step.ExpectSave(store.NewFile(*ss.ExpectSave))
+		}
+
+		if ss.Later != nil {
+			for i, t := range ss.Later {
+				step.Additional(i, "time", time.Second*t)
+			}
 		}
 
 		if ss.Command {
