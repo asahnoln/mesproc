@@ -30,6 +30,7 @@ type Handler struct {
 	str     *story.Story
 	usrCfgs map[int]usrCfg
 	lgr     *log.Logger
+	timers  []*time.Timer
 }
 
 // Sender is an interface for different sending options, like sendMessage, sendAudio etc.
@@ -76,15 +77,16 @@ func (h *Handler) send(u Update) {
 		usrCfg.lang = u.Message.From.LanguageCode
 	}
 
+	if h.runTimedResponses() {
+		return
+	}
+
 	rs := h.str.ResponsesWithLangStepTo(usrCfg.step, usrCfg.lang, convertText(u))
 	rs, translated := h.translateLastResponses(usrCfg, rs)
 
 	for _, r := range rs {
 		if t, ok := r.Additional["time"]; ok {
-			go func() {
-				time.Sleep(t.(time.Duration))
-				h.sendResponse(r, id)
-			}()
+			h.addTimedResponse(r, t.(time.Duration), id)
 		} else {
 			h.sendResponse(r, id)
 		}
@@ -93,6 +95,24 @@ func (h *Handler) send(u Update) {
 
 	usrCfg.lastRs = rs
 	h.updateUsrCfg(id, usrCfg, rs[0], translated)
+}
+
+func (h *Handler) addTimedResponse(r story.Response, t time.Duration, id int) {
+	timer := time.AfterFunc(t, func() {
+		h.sendResponse(r, id)
+		h.timers = h.timers[1:]
+	})
+	h.timers = append(h.timers, timer)
+}
+
+func (h *Handler) runTimedResponses() bool {
+	if len(h.timers) > 0 {
+		timer := h.timers[0]
+		timer.Reset(0)
+		return true
+	}
+
+	return false
 }
 
 func (h *Handler) sendResponse(r story.Response, id int) {

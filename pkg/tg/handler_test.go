@@ -281,9 +281,14 @@ func TestLaterMessage(t *testing.T) {
 	str := story.New().
 		Add(story.NewStep().
 			Expect("want late").
-			Respond("first", "late").
+			Respond("first", "second", "late", "immediately").
 			Fail("fail").
-			Additional(1, "time", time.Millisecond*100))
+			Additional(2, "time", time.Millisecond*100)).
+		Add(story.NewStep().
+			Expect("no expectation").
+			Respond("unreachable!").
+			Fail("should be unreachable"))
+
 	th := tg.New(target, str, nil)
 
 	obj := tg.Update{
@@ -300,10 +305,66 @@ func TestLaterMessage(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
 	th.ServeHTTP(w, r)
 
+	assert.Len(t, stg.gotText, 3)
+
 	// TODO: Should not wait for real
-	assert.Len(t, stg.gotText, 1)
-	time.Sleep(time.Millisecond * 101)
-	assert.Len(t, stg.gotText, 2)
+	time.Sleep(time.Millisecond * 202)
+	assert.Len(t, stg.gotText, 4)
+}
+
+func TestCancelLaterMessage(t *testing.T) {
+	stg := &stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	str := story.New().
+		Add(story.NewStep().
+			Expect("want late cancel").
+			Respond("first", "second", "late but cancelled", "even later", "immediately").
+			Fail("fail").
+			Additional(2, "time", time.Millisecond*100).
+			Additional(3, "time", time.Millisecond*200)).
+		Add(story.NewStep().
+			Expect("no expectation").
+			Respond("unreachable!").
+			Fail("should be unreachable"))
+
+	th := tg.New(target, str, nil)
+
+	obj := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 657,
+			},
+			Text: "want late cancel",
+		},
+	}
+	body, _ := json.Marshal(obj)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+
+	assert.Len(t, stg.gotText, 3)
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+	time.Sleep(time.Millisecond * 1)
+
+	require.Len(t, stg.gotText, 4)
+	assert.Equal(t, "late but cancelled", stg.gotText[3])
+
+	// TODO: Should not wait for real
+	time.Sleep(time.Millisecond * 202)
+	require.Len(t, stg.gotText, 5)
+	assert.Equal(t, "even later", stg.gotText[4])
+
+	w = httptest.NewRecorder()
+	r = httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+	require.Len(t, stg.gotText, 6)
+	assert.Equal(t, "should be unreachable", stg.gotText[5])
 }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
