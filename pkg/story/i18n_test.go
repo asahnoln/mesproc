@@ -30,19 +30,29 @@ func TestI18nLoadingError(t *testing.T) {
 
 func TestI18nTranslateResponses(t *testing.T) {
 	str := story.New().
+		AddCommand(story.NewStep().Expect("command").Respond("cmdResponse")).
 		Add(story.NewStep().Expect("message").Respond("one", "two").Fail("fail")).
 		I18n(story.I18nMap{
 			"ru": {
-				"one": "один",
-				"two": "два",
+				"cmdResponse": "кмдОтвет",
+				"one":         "один",
+				"two":         "два",
 			},
 		})
 
-	rs := str.ResponsesWithLangStepTo(0, "ru", "message")
+	t.Run("common reply", func(t *testing.T) {
+		rs := str.ResponsesWithLangStepTo(0, "ru", "message")
 
-	localized := str.I18nMap().Translate(rs, "en")
+		localized := str.I18nMap().Translate(rs, "en")
 
-	assert.Len(t, localized, 2, "want same count of translated responses")
-	assert.Equal(t, "en", localized[0].Lang(), "want Russian language responses")
-	assert.Equal(t, "one", localized[0].Text())
+		require.Len(t, localized, 2, "want same count of translated responses")
+		assert.Equal(t, "en", localized[0].Lang(), "want Russian language responses")
+		assert.Equal(t, "one", localized[0].Text())
+	})
+
+	t.Run("command", func(t *testing.T) {
+		rs := str.ResponsesWithLangStepTo(99, "ru", "/command")
+		localized := str.I18nMap().Translate(rs, "en")
+		assert.Equal(t, "cmdResponse", localized[0].Text())
+	})
 }

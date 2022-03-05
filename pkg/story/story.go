@@ -64,10 +64,8 @@ func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Respon
 	result := make([]Response, len(rs))
 	for i, r := range rs {
 		result[i] = Response{
-			original: r,
-			// TODO: Actually there is translation of tranlsation sometimes right now
-			// TODO: Should clean insided from parseAndRespond
-			text:          s.i18n.Line(r, lang),
+			original:      r,
+			text:          s.i18n.Line(r, l),
 			shouldAdvance: ok,
 			lang:          l,
 		}
@@ -88,7 +86,7 @@ func (s *Story) parseAndRespond(stp int, lang string, m string) ([]string, strin
 		if l != "" {
 			lang = l
 		}
-		return s.getI18nLines(lang, r), lang, false
+		return r, lang, false
 	}
 
 	r, ok := s.stepResponsesOrFail(m, lang, s.rotateStep(stp))
@@ -126,28 +124,10 @@ func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
 	}
 
 	if !stp.isGeo {
-		return strings.EqualFold(s.getI18nLine(lang, stp.expectation), m)
+		return strings.EqualFold(s.i18n.Line(stp.expectation, lang), m)
 	}
 
 	return stp.checkGeo(m)
-}
-
-func (s *Story) getI18nLine(lang, l string) string {
-	if lang != "" {
-		if r, ok := s.i18n[lang][l]; ok {
-			l = r
-		}
-	}
-
-	return l
-}
-
-func (s *Story) getI18nLines(lang string, ls []string) []string {
-	for i, l := range ls {
-		ls[i] = s.getI18nLine(lang, l)
-	}
-
-	return ls
 }
 
 func (s *Story) parseCommand(m string) ([]string, string, bool) {

@@ -125,11 +125,13 @@ func TestAudio(t *testing.T) {
 
 func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	str := story.New().
+		AddCommand(story.NewStep().Expect("start").Respond("startCommand").Fail("no fail")).
 		Add(story.NewStep().Expect("step 1").Respond("you're great!", "go to step 2").Fail("still step 1")).
 		Add(story.NewStep().Expect("step 2").Respond("go to step 3").Fail("still step 2")).
 		Add(story.NewStep().Expect("step 3").Respond("finish", "non loc finish", "loc finish").Fail("still step 3")).
 		I18n(story.I18nMap{
 			"ru": {
+				"startCommand":            "стартоваяКоманда",
 				"step 1":                  "шаг 1",
 				"you're great!":           "вы классный!",
 				"go to step 2":            "идите к шагу 2",
@@ -157,6 +159,9 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 					ID: id,
 				},
 				Text: text,
+				From: tg.From{
+					LanguageCode: "ru",
+				},
 			},
 		})
 		require.NoError(t, err, "unexpected error while marshaling object")
@@ -178,7 +183,11 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 		message   string
 		responses []string
 	}{
+		{2, "/start", []string{"стартоваяКоманда"}},
+		{2, "/en", []string{"startCommand"}},
+
 		// Tested different steps for users
+		{1, "/en", []string{"Language changed"}}, // TODO: Is it ok it returns this if it was first command ever?
 		{1, "step 1", []string{"you're great!", "go to step 2"}},
 		{2, "wrong step", []string{"still step 1"}},
 
