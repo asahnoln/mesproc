@@ -1,4 +1,5 @@
 ![example workflow](https://github.com/asahnoln/mesproc/actions/workflows/go.yml/badge.svg)
+[![codecov](https://codecov.io/gh/asahnoln/mesproc/branch/master/graph/badge.svg?token=OBVjl4n7VU)](https://codecov.io/gh/asahnoln/mesproc)
 
 # What is it?
 
