@@ -7,3 +7,4 @@ cmd/webhook/webhook
 cmd/longpoll/longpoll
 debug.test
 cover.out
+coverage.txt
