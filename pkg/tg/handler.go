@@ -18,6 +18,8 @@ const (
 	PrefixAudio = "audio:"
 	// PrefixPhoto identifies text as a sendPhoto candidate
 	PrefixPhoto = "photo:"
+	// ParseMode is the default text parse mode
+	ParseMode = "MarkdownV2"
 )
 
 type usrCfg struct {
@@ -176,7 +178,9 @@ func convertText(u Update) string {
 
 // figureSenderType uses received text as a way to figure out what should be sent back
 func figureSenderType(text string) Sender {
-	var v Sender = &SendMessage{}
+	var v Sender = &SendMessage{
+		ParseMode: ParseMode,
+	}
 	switch {
 	case strings.HasPrefix(text, PrefixAudio):
 		v = &SendAudio{}

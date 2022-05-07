@@ -29,8 +29,9 @@ type Location struct {
 
 // SendMessage is an object used to send a message to a bot
 type SendMessage struct {
-	ChatID int    `json:"chat_id"`
-	Text   string `json:"text"`
+	ChatID    int    `json:"chat_id"`
+	Text      string `json:"text"`
+	ParseMode string `json:"parse_mode"`
 }
 
 // SendAudio is an object used to send an audio to a bot
