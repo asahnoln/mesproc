@@ -87,11 +87,12 @@ func Load(r io.Reader) (*Story, error) {
 			}
 		}
 
-		if ss.Command {
+		switch {
+		case ss.Command:
 			s.AddCommand(step)
-		} else if ss.Unordered {
+		case ss.Unordered:
 			s.AddUnordered(step)
-		} else {
+		default:
 			s.Add(step)
 		}
 	}
