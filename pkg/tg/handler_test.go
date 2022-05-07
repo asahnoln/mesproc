@@ -17,8 +17,8 @@ import (
 )
 
 type stubTgServer struct {
-	gotText, gotHeader, gotPath, gotParseMode []string
-	gotChatID                                 []int
+	gotText, gotHeader, gotPath []string
+	gotChatID                   []int
 }
 
 func TestHandler(t *testing.T) {
@@ -86,7 +86,6 @@ func TestHandler(t *testing.T) {
 				assert.Equal(t, "application/json", stg.gotHeader[i], "want tg service right header")
 				assert.Equal(t, r, stg.gotText[i], "want tg service receiving right message")
 				assert.Equal(t, tt.update.Message.Chat.ID, stg.gotChatID[i], "want tg service receiving right chat")
-				assert.Equal(t, "MarkdownV2", stg.gotParseMode[i], "want tg service receiving right chat")
 			}
 		})
 
@@ -413,32 +412,31 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux := http.NewServeMux()
 		s.gotPath = append(s.gotPath, r.URL.Path)
-		fillData := func(id int, text, parseMode string, r *http.Request) {
+		fillData := func(id int, text string, r *http.Request) {
 			s.gotHeader = append(s.gotHeader, r.Header.Get("Content-Type"))
 			s.gotChatID = append(s.gotChatID, id)
 			s.gotText = append(s.gotText, text)
-			s.gotParseMode = append(s.gotParseMode, parseMode)
 		}
 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendMessage
 			json.NewDecoder(r.Body).Decode(&m)
-			fillData(m.ChatID, m.Text, m.ParseMode, r)
+			fillData(m.ChatID, m.Text, r)
 		})
 		mux.HandleFunc("/sendAudio", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendAudio
 			json.NewDecoder(r.Body).Decode(&m)
-			fillData(m.ChatID, m.Audio, "", r)
+			fillData(m.ChatID, m.Audio, r)
 		})
 		// TODO: When testing new uris easy to forget to add them, should be error or something?
 		mux.HandleFunc("/sendPhoto", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendPhoto
 			json.NewDecoder(r.Body).Decode(&m)
-			fillData(m.ChatID, m.Photo, "", r)
+			fillData(m.ChatID, m.Photo, r)
 		})
 		mux.HandleFunc("/sendChatAction", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendChatAction
 			json.NewDecoder(r.Body).Decode(&m)
-			fillData(m.ChatID, m.Action, "", r)
+			fillData(m.ChatID, m.Action, r)
 		})
 
 		mux.ServeHTTP(w, r)
