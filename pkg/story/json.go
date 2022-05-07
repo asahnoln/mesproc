@@ -17,6 +17,7 @@ type JSONExpectGeo struct {
 // JSONStep is a struct for step in JSON file
 type JSONStep struct {
 	Command    bool
+	Unordered  bool
 	Expect     *string
 	Response   *string
 	Fail       string
@@ -88,6 +89,8 @@ func Load(r io.Reader) (*Story, error) {
 
 		if ss.Command {
 			s.AddCommand(step)
+		} else if ss.Unordered {
+			s.AddUnordered(step)
 		} else {
 			s.Add(step)
 		}

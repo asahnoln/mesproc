@@ -19,6 +19,11 @@
     "fail": "still waiting for geo"
   },
   {
+    "unordered": true,
+    "expect": "unordered",
+    "response": "out of order"
+  },
+  {
     "expect": "finish",
     "response": "now finished",
     "fail": "still at step 2"

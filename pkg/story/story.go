@@ -34,6 +34,7 @@ func (r Response) Lang() string {
 type Story struct {
 	steps        []*Step
 	cmds         map[string]*Step
+	unordered    map[string]*Step
 	curStepIndex int
 	i18n         I18nMap
 	lang         string
@@ -42,7 +43,8 @@ type Story struct {
 // New creates a new Story
 func New() *Story {
 	return &Story{
-		cmds: make(map[string]*Step),
+		cmds:      make(map[string]*Step),
+		unordered: make(map[string]*Step),
 	}
 }
 
@@ -55,6 +57,11 @@ func (s *Story) Add(step *Step) *Story {
 // AddCommand adds a command to the story
 func (s *Story) AddCommand(step *Step) *Story {
 	s.cmds[step.Expectation()] = step
+	return s
+}
+
+func (s *Story) AddUnordered(step *Step) *Story {
+	s.unordered[step.Expectation()] = step
 	return s
 }
 
@@ -82,7 +89,7 @@ func (s *Story) parseAndRespond(stp int, lang string, m string) ([]string, strin
 		lang = "en"
 	}
 
-	if r, l, ok := s.parseCommand(m); ok {
+	if r, l, ok := s.parseUnordered(m); ok {
 		if l != "" {
 			lang = l
 		}
@@ -130,17 +137,19 @@ func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
 	return stp.checkGeo(m)
 }
 
-func (s *Story) parseCommand(m string) ([]string, string, bool) {
-	if !strings.HasPrefix(m, "/") {
-		return nil, "", false
+func (s *Story) parseUnordered(m string) ([]string, string, bool) {
+	lookUp := s.unordered
+
+	if strings.HasPrefix(m, "/") {
+		lookUp = s.cmds
+		m = m[1:]
 	}
 
-	c := m[1:]
-	if r, lang, ok := s.processI18nCommand(c); ok {
+	if r, lang, ok := s.processI18nCommand(m); ok {
 		return []string{r}, lang, true
 	}
 
-	if stp, ok := s.cmds[c]; ok {
+	if stp, ok := lookUp[m]; ok {
 		return stp.Responses(), "", true
 	}
 
