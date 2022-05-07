@@ -16,6 +16,8 @@ import (
 const (
 	// PrefixAudio identifies text as a sendAudio candidate
 	PrefixAudio = "audio:"
+	// PrefixPhoto identifies text as a sendPhoto candidate
+	PrefixPhoto = "photo:"
 )
 
 type usrCfg struct {
@@ -141,6 +143,13 @@ func (h *Handler) before(v Sender) {
 		})
 		http.Post(h.target+"/sendChatAction", "application/json", bytes.NewReader(m))
 	}
+	if a, ok := v.(*SendPhoto); ok {
+		m, _ := json.Marshal(SendChatAction{
+			ChatID: a.ChatID,
+			Action: "upload_photo",
+		})
+		http.Post(h.target+"/sendChatAction", "application/json", bytes.NewReader(m))
+	}
 }
 
 func (h *Handler) updateUsrCfg(id int, u usrCfg, r story.Response, translated bool) {
@@ -168,9 +177,13 @@ func convertText(u Update) string {
 // figureSenderType uses received text as a way to figure out what should be sent back
 func figureSenderType(text string) Sender {
 	var v Sender = &SendMessage{}
-	if strings.HasPrefix(text, PrefixAudio) {
+	switch {
+	case strings.HasPrefix(text, PrefixAudio):
 		v = &SendAudio{}
 		text = text[len(PrefixAudio):]
+	case strings.HasPrefix(text, PrefixPhoto):
+		v = &SendPhoto{}
+		text = text[len(PrefixPhoto):]
 	}
 
 	v.SetContent(text)

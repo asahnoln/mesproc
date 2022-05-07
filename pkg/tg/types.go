@@ -39,10 +39,31 @@ type SendAudio struct {
 	Audio  string `json:"audio"`
 }
 
+// SendPhoto is an object used to send an audio to a bot
+type SendPhoto struct {
+	ChatID int    `json:"chat_id"`
+	Photo  string `json:"photo"`
+}
+
 // SendChatAction is an object used to send a chat action to a bot
 type SendChatAction struct {
 	ChatID int    `json:"chat_id"`
 	Action string `json:"action"`
+}
+
+// SetChatID sets chat ID for current sender
+func (s *SendPhoto) SetChatID(i int) {
+	s.ChatID = i
+}
+
+// SetContent sets content for current sender
+func (s *SendPhoto) SetContent(a string) {
+	s.Photo = a
+}
+
+// URL returns Telegram endpoint to process current sender
+func (s *SendPhoto) URL() string {
+	return "/sendPhoto"
 }
 
 // SetChatID sets chat ID for current sender

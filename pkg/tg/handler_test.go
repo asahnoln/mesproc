@@ -123,6 +123,38 @@ func TestAudio(t *testing.T) {
 	assert.Equal(t, "http://example.com/audio.mp3", stg.gotText[1])
 }
 
+func TestPhoto(t *testing.T) {
+	str := story.New().Add(story.NewStep().Respond("photo:http://example.com/photo.jpg").Expect("picture").Fail("wrong picture"))
+	stg := &stubTgServer{}
+	close, target := stg.tgServerMockURL()
+	defer close()
+
+	th := tg.New(target, str, nil)
+
+	body, _ := json.Marshal(tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 7,
+			},
+			Text: "picture",
+		},
+	})
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+
+	assert.Equal(t, "/sendChatAction", stg.gotPath[0], "want first to be sent - chat action")
+	assert.Equal(t, "application/json", stg.gotHeader[0])
+	assert.Equal(t, 7, stg.gotChatID[0])
+	assert.Equal(t, "upload_photo", stg.gotText[0])
+
+	t.Logf("%#v\n", stg)
+	assert.Equal(t, "/sendPhoto", stg.gotPath[1], "want second to be sent - photo")
+	assert.Equal(t, "application/json", stg.gotHeader[1])
+	assert.Equal(t, 7, stg.gotChatID[1])
+	assert.Equal(t, "http://example.com/photo.jpg", stg.gotText[1])
+}
+
 func TestDifferentUsersStepsAndLangs(t *testing.T) {
 	str := story.New().
 		AddCommand(story.NewStep().Expect("start").Respond("startCommand").Fail("no fail")).
@@ -394,6 +426,12 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 			var m tg.SendAudio
 			json.NewDecoder(r.Body).Decode(&m)
 			fillData(m.ChatID, m.Audio, r)
+		})
+		// TODO: When testing new uris easy to forget to add them, should be error or something?
+		mux.HandleFunc("/sendPhoto", func(w http.ResponseWriter, r *http.Request) {
+			var m tg.SendPhoto
+			json.NewDecoder(r.Body).Decode(&m)
+			fillData(m.ChatID, m.Photo, r)
 		})
 		mux.HandleFunc("/sendChatAction", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendChatAction
