@@ -61,7 +61,7 @@ func (s *Story) AddCommand(step *Step) *Story {
 }
 
 func (s *Story) AddUnordered(step *Step) *Story {
-	s.unordered[step.Expectation()] = step
+	s.unordered[strings.ToLower(step.Expectation())] = step
 	return s
 }
 
@@ -147,6 +147,7 @@ func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
 }
 
 func (s *Story) parseUnordered(m string) ([]string, string, bool) {
+	m = strings.ToLower(m)
 	lookUp := s.unordered
 
 	if strings.HasPrefix(m, "/") {

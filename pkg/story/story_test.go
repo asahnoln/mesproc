@@ -136,12 +136,12 @@ func TestSeveralResponses(t *testing.T) {
 	assert.Equal(t, "второе сообщение", rs[1].Text(), "want second message")
 }
 
-func TestUnorderedSteps(t *testing.T) {
+func TestUnorderedCaseInsensitiveSteps(t *testing.T) {
 	str := story.New().
 		Add(story.NewStep().Expect("ordered").Respond("not step I want").Fail("ordered expectation fail")).
-		AddUnordered(story.NewStep().Expect("unordered").Respond("proper"))
+		AddUnordered(story.NewStep().Expect("unOrdered").Respond("proper"))
 
-	rs := str.ResponsesWithLangStepTo(0, "", "unordered")
+	rs := str.ResponsesWithLangStepTo(0, "", "Unordered")
 	assert.Equal(t, "proper", rs[0].Text(), "want unordered step response")
 }
 
