@@ -203,7 +203,7 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 		th.ServeHTTP(w, r)
 
 		for j, w := range want {
-			assert.Equal(t, w, stg.gotText[j], "want response for user %d", id)
+			assert.Equal(t, w, stg.gotText[j], "want response for user %d: %q", id, w)
 		}
 
 		// Reset server values
@@ -238,6 +238,10 @@ func TestDifferentUsersStepsAndLangs(t *testing.T) {
 		{2, "шаг 2", []string{"go to step 3"}},
 		{2, "step 3", []string{"финиш", "non loc finish", "loc финиш"}},
 		{2, "что", []string{"все еще шаг 1"}},
+
+		// Start command should reset the story (user 1 is at the 3rd step now)
+		{1, "/start", []string{"startCommand"}},
+		{1, "where am I after reset", []string{"still step 1"}},
 	}
 
 	for _, tt := range tests {

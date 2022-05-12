@@ -30,7 +30,7 @@ type usrCfg struct {
 type Handler struct {
 	target  string
 	str     *story.Story
-	usrCfgs map[int]usrCfg
+	usrCfgs map[int]*usrCfg
 	lgr     *log.Logger
 	timers  []*time.Timer
 }
@@ -50,7 +50,7 @@ func New(target string, str *story.Story, logger *log.Logger) *Handler {
 	return &Handler{
 		target:  target,
 		str:     str,
-		usrCfgs: make(map[int]usrCfg),
+		usrCfgs: make(map[int]*usrCfg),
 		lgr:     logger,
 	}
 }
@@ -74,17 +74,14 @@ func (h *Handler) logIncoming(u Update) {
 // send sends back a Sender
 func (h *Handler) send(u Update) {
 	id := u.Message.Chat.ID
-	usrCfg := h.usrCfgs[id]
-	if usrCfg.lang == "" {
-		usrCfg.lang = u.Message.From.LanguageCode
-	}
+	uCfg := h.prepareUserConfig(id, u)
 
 	if h.runTimedResponses() {
 		return
 	}
 
-	rs := h.str.ResponsesWithLangStepTo(usrCfg.step, usrCfg.lang, convertText(u))
-	rs, translated := h.translateLastResponses(usrCfg, rs)
+	rs := h.str.ResponsesWithLangStepTo(uCfg.step, uCfg.lang, convertText(u))
+	rs, translated := h.translateLastResponses(uCfg, rs)
 
 	for _, r := range rs {
 		if t, ok := r.Additional["time"]; ok {
@@ -95,8 +92,24 @@ func (h *Handler) send(u Update) {
 
 	}
 
-	usrCfg.lastRs = rs
-	h.updateUsrCfg(id, usrCfg, rs[0], translated)
+	uCfg.lastRs = rs
+	h.updateUsrCfg(id, uCfg, rs[0], translated)
+}
+
+func (h *Handler) prepareUserConfig(id int, u Update) *usrCfg {
+	uCfg, ok := h.usrCfgs[id]
+	if !ok {
+		h.usrCfgs[id] = &usrCfg{}
+		uCfg = h.usrCfgs[id]
+	}
+	if uCfg.lang == "" {
+		uCfg.lang = u.Message.From.LanguageCode
+	}
+	if u.Message.Text == "/start" {
+		uCfg.step = 0
+	}
+
+	return uCfg
 }
 
 func (h *Handler) addTimedResponse(r story.Response, t time.Duration, id int) {
@@ -128,7 +141,7 @@ func (h *Handler) sendResponse(r story.Response, id int) {
 	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 }
 
-func (h *Handler) translateLastResponses(u usrCfg, rs []story.Response) ([]story.Response, bool) {
+func (h *Handler) translateLastResponses(u *usrCfg, rs []story.Response) ([]story.Response, bool) {
 	if u.lastRs != nil && rs[0].Lang() != u.lang {
 		return h.str.I18nMap().Translate(u.lastRs, rs[0].Lang()), true
 	}
@@ -152,12 +165,11 @@ func (h *Handler) before(v Sender) {
 	}
 }
 
-func (h *Handler) updateUsrCfg(id int, u usrCfg, r story.Response, translated bool) {
+func (h *Handler) updateUsrCfg(id int, u *usrCfg, r story.Response, translated bool) {
 	if r.ShouldAdvance() && !translated {
 		u.step++
 	}
 	u.lang = r.Lang()
-	h.usrCfgs[id] = u
 }
 
 // ServeHTTP implements http.Handler
