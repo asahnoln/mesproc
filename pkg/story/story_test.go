@@ -144,3 +144,25 @@ func TestUnorderedSteps(t *testing.T) {
 	rs := str.ResponsesWithLangStepTo(0, "", "unordered")
 	assert.Equal(t, "proper", rs[0].Text(), "want unordered step response")
 }
+
+func TestYeAndYoSimilarInRussian(t *testing.T) {
+	str := story.New().
+		Add(story.NewStep().Expect("everyone").Respond("nice").Fail("want ye")).
+		Add(story.NewStep().Expect("all").Respond("nice").Fail("want yo")).
+		I18n(story.I18nMap{
+			"ru": {
+				"all":      "всё",
+				"everyone": "все",
+			},
+		})
+
+	t.Run("expect ye, send yo", func(t *testing.T) {
+		rs := str.ResponsesWithLangStepTo(0, "ru", "всё")
+		assert.Equal(t, "nice", rs[0].Text(), "want proper response to yo message with ye expectation")
+	})
+
+	t.Run("expect yo, send ye", func(t *testing.T) {
+		rs := str.ResponsesWithLangStepTo(1, "ru", "все")
+		assert.Equal(t, "nice", rs[0].Text(), "want proper response to ye message with yo expectation")
+	})
+}

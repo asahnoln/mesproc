@@ -67,6 +67,8 @@ func (s *Story) AddUnordered(step *Step) *Story {
 
 // ResponsesWithLangStepTo return multiple responses from a step with ones
 func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Response {
+	m = fixRussianYo(m)
+
 	rs, l, ok := s.parseAndRespond(stp, lang, m)
 	result := make([]Response, len(rs))
 	for i, r := range rs {
@@ -82,6 +84,10 @@ func (s *Story) ResponsesWithLangStepTo(stp int, lang string, m string) []Respon
 		}
 	}
 	return result
+}
+
+func fixRussianYo(m string) string {
+	return strings.ReplaceAll(m, "ё", "е")
 }
 
 func (s *Story) parseAndRespond(stp int, lang string, m string) ([]string, string, bool) {
@@ -131,7 +137,10 @@ func (s *Story) isExpectationCorrect(m, lang string, stp *Step) bool {
 	}
 
 	if !stp.isGeo {
-		return strings.EqualFold(s.i18n.Line(stp.expectation, lang), m)
+		return strings.EqualFold(
+			fixRussianYo(s.i18n.Line(stp.expectation, lang)),
+			m,
+		)
 	}
 
 	return stp.checkGeo(m)
