@@ -412,6 +412,59 @@ func TestCancelLaterMessage(t *testing.T) {
 	assert.Equal(t, "should be unreachable", stg.gotText[5])
 }
 
+func TestTelegramError(t *testing.T) {
+	stg := &stubTgServer{}
+	close, target := stg.tgServerErrMockURL()
+	defer close()
+
+	str := story.New().Add(story.NewStep().Expect("smth").Respond("good"))
+	th := tg.New(target, str, nil)
+
+	obj := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 333,
+			},
+			Text: "smth",
+		},
+	}
+	body, _ := json.Marshal(obj)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+
+	require.Len(t, stg.gotText, 1, "should receive answer after error")
+	assert.Equal(t, "good", stg.gotText[0])
+}
+
+func (s *stubTgServer) tgServerErrMockURL() (func(), string) {
+	i := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux := http.NewServeMux()
+		s.gotPath = append(s.gotPath, r.URL.Path)
+		fillData := func(id int, text string, r *http.Request) {
+			s.gotHeader = append(s.gotHeader, r.Header.Get("Content-Type"))
+			s.gotChatID = append(s.gotChatID, id)
+			s.gotText = append(s.gotText, text)
+		}
+		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
+			var m tg.SendMessage
+			json.NewDecoder(r.Body).Decode(&m)
+			fillData(m.ChatID, m.Text, r)
+		})
+
+		i++
+		if i > 3 {
+			mux.ServeHTTP(w, r)
+			return
+		}
+
+		http.Error(w, "telegram error", http.StatusInternalServerError)
+	}))
+
+	return srv.Close, srv.URL
+}
+
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mux := http.NewServeMux()

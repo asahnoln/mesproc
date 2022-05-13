@@ -138,7 +138,13 @@ func (h *Handler) sendResponse(r story.Response, id int) {
 
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
-	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+	for {
+		resp, _ := http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+		if resp.StatusCode == http.StatusOK {
+			break
+		}
+		time.Sleep(time.Second * 1)
+	}
 }
 
 func (h *Handler) translateLastResponses(u *usrCfg, rs []story.Response) ([]story.Response, bool) {
