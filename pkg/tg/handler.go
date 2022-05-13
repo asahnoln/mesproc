@@ -71,6 +71,12 @@ func (h *Handler) logIncoming(u Update) {
 	}
 }
 
+func (h *Handler) logSending(r *http.Response, err error) {
+	if h.lgr != nil {
+		h.lgr.Printf("%s: response from telegram: %#v, error %#v", time.Now().Format(time.RFC3339), r, err)
+	}
+}
+
 // send sends back a Sender
 func (h *Handler) send(u Update) {
 	id := u.Message.Chat.ID
@@ -146,6 +152,7 @@ func (h *Handler) sendResponse(r story.Response, id int) {
 		if resp.StatusCode == http.StatusOK && err == nil {
 			break
 		}
+		h.logSending(resp, err)
 	}
 }
 
