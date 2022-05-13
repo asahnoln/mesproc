@@ -139,8 +139,8 @@ func (h *Handler) sendResponse(r story.Response, id int) {
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
 	for {
-		resp, _ := http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
-		if resp.StatusCode == http.StatusOK {
+		resp, err := http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+		if resp.StatusCode == http.StatusOK && err == nil {
 			break
 		}
 		time.Sleep(time.Second * 1)
