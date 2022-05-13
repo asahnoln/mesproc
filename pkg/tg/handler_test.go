@@ -412,30 +412,30 @@ func TestCancelLaterMessage(t *testing.T) {
 	assert.Equal(t, "should be unreachable", stg.gotText[5])
 }
 
-// func TestTelegramError(t *testing.T) {
-// 	stg := &stubTgServer{}
-// 	close, target := stg.tgServerErrMockURL()
-// 	defer close()
+func TestTelegramError(t *testing.T) {
+	stg := &stubTgServer{}
+	close, target := stg.tgServerErrMockURL()
+	defer close()
 
-// 	str := story.New().Add(story.NewStep().Expect("smth").Respond("good"))
-// 	th := tg.New(target, str, nil)
+	str := story.New().Add(story.NewStep().Expect("smth").Respond("good"))
+	th := tg.New(target, str, nil)
 
-// 	obj := tg.Update{
-// 		Message: tg.Message{
-// 			Chat: tg.Chat{
-// 				ID: 333,
-// 			},
-// 			Text: "smth",
-// 		},
-// 	}
-// 	body, _ := json.Marshal(obj)
-// 	w := httptest.NewRecorder()
-// 	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
-// 	th.ServeHTTP(w, r)
+	obj := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 333,
+			},
+			Text: "smth",
+		},
+	}
+	body, _ := json.Marshal(obj)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
 
-// 	require.Len(t, stg.gotText, 1, "should receive answer after error")
-// 	assert.Equal(t, "good", stg.gotText[0])
-// }
+	require.Len(t, stg.gotText, 1, "should receive answer after error")
+	assert.Equal(t, "good", stg.gotText[0])
+}
 
 func (s *stubTgServer) tgServerErrMockURL() (func(), string) {
 	i := 0

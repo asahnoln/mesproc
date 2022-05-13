@@ -141,14 +141,12 @@ func (h *Handler) sendResponse(r story.Response, id int) {
 
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
-	// for {
-	// 	resp, err := http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
-	// 	if resp.StatusCode == http.StatusOK && err == nil {
-	// 		break
-	// 	}
-	// 	time.Sleep(time.Second * 1)
-	// }
-	http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+	for {
+		resp, err := http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
+		if resp.StatusCode == http.StatusOK && err == nil {
+			break
+		}
+	}
 }
 
 func (h *Handler) translateLastResponses(u *usrCfg, rs []story.Response) ([]story.Response, bool) {
