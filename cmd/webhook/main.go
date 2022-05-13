@@ -65,7 +65,7 @@ func main() {
 	}
 	th := tg.New(os.Getenv("BOT_ADDR"), str, logger)
 
-	log.Fatalln(http.ListenAndServeTLS(
+	logger.Fatalln(http.ListenAndServeTLS(
 		os.Getenv("SRV_PORT"), os.Getenv("CERT_FILE"), os.Getenv("KEY_FILE"),
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			mux := http.NewServeMux()
