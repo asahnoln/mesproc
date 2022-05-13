@@ -147,12 +147,16 @@ func (h *Handler) sendResponse(r story.Response, id int) {
 
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
+	i := 0
 	for {
 		resp, err := http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 		if resp.StatusCode == http.StatusOK && err == nil {
 			break
 		}
-		h.logSending(resp, err)
+		if i < 1 {
+			h.logSending(resp, err)
+		}
+		i++
 	}
 }
 
