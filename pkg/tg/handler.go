@@ -115,7 +115,10 @@ func (h *Handler) prepareUserConfig(id int, u Update) *usrCfg {
 func (h *Handler) addTimedResponse(r story.Response, t time.Duration, id int) {
 	timer := time.AfterFunc(t, func() {
 		h.sendResponse(r, id)
-		h.timers = h.timers[1:]
+		// TODO: Write test for this one
+		if len(h.timers) > 0 {
+			h.timers = h.timers[1:]
+		}
 	})
 	h.timers = append(h.timers, timer)
 }
