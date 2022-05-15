@@ -3,7 +3,7 @@ MAINTAINER Arthur Aslanyan <arthur.e.aslanyan@gmail.com>
 
 ENV CGO_ENABLED=0
 WORKDIR /src
-COPY go.* .
+COPY go.* ./
 RUN go mod download
 
 FROM base AS test
