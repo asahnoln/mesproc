@@ -4,4 +4,4 @@ lint:
 	@docker build --target lint .
 
 unit-test:
-	@docker build --target test .
+	@docker build --target coverage-test --output ./ .

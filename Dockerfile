@@ -8,11 +8,14 @@ RUN go mod download
 
 FROM base AS test
 COPY . .
-RUN go test -v ./...
+RUN go test -coverprofile=coverage.txt -covermode=atomic -v ./...
 
 FROM golangci/golangci-lint:v1.46-alpine AS lint-base
 
 FROM base as lint
-COPY --from=lint-base /usr/bin/golangci-lint /usr/bin/golangci-lint
 RUN --mount=target=. \
+    --mount=from=lint-base,src=/usr/bin/golangci-lint,target=/usr/bin/golangci-lint \
     golangci-lint run
+
+FROM scratch AS coverage-test
+COPY --from=test /src/coverage.txt /
