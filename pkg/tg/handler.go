@@ -45,6 +45,11 @@ type Sender interface {
 	URL() string       // URL returns Telegram endpoint to process current sender
 }
 
+type ChatActionSender interface {
+	GetChatID() int     // Returns chat ID
+	ChatAction() string // Chat action for current sender
+}
+
 // New creates a Telegram handler.
 func New(target string, str *story.Story, logger *log.Logger) *Handler {
 	return &Handler{
@@ -56,13 +61,17 @@ func New(target string, str *story.Story, logger *log.Logger) *Handler {
 }
 
 // receive gets an Update from a bot
-func (h *Handler) receive(w http.ResponseWriter, r *http.Request) Update {
+func (h *Handler) receive(w http.ResponseWriter, r *http.Request) (Update, error) {
 	var u Update
 	// TODO: Handle error
-	json.NewDecoder(r.Body).Decode(&u)
+	err := json.NewDecoder(r.Body).Decode(&u)
+	if err != nil {
+		h.lgr.Printf("receive error: %v", err)
+		return u, fmt.Errorf("tg: handler receive: %w", err)
+	}
 
 	h.logIncoming(u)
-	return u
+	return u, nil
 }
 
 func (h *Handler) logIncoming(u Update) {
@@ -93,7 +102,11 @@ func (h *Handler) send(u Update) {
 		if t, ok := r.Additional["time"]; ok {
 			h.addTimedResponse(r, t.(time.Duration), id)
 		} else {
-			h.sendResponse(r, id)
+			err := h.sendResponse(r, id)
+			if err != nil {
+				// TODO: Do something
+				h.lgr.Printf("send response err: %v", err)
+			}
 		}
 
 	}
@@ -120,7 +133,10 @@ func (h *Handler) prepareUserConfig(id int, u Update) *usrCfg {
 
 func (h *Handler) addTimedResponse(r story.Response, t time.Duration, id int) {
 	timer := time.AfterFunc(t, func() {
-		h.sendResponse(r, id)
+		err := h.sendResponse(r, id)
+		if err != nil {
+			h.lgr.Printf("timed response err: %v", err)
+		}
 		// TODO: Write test for this one
 		if len(h.timers) > 0 {
 			h.timers = h.timers[1:]
@@ -139,16 +155,21 @@ func (h *Handler) runTimedResponses() bool {
 	return false
 }
 
-func (h *Handler) sendResponse(r story.Response, id int) {
+func (h *Handler) sendResponse(r story.Response, id int) error {
 	v := figureSenderType(r.Text())
 	v.SetChatID(id)
 
-	h.before(v)
+	err := h.before(v)
+	if err != nil {
+		return err
+	}
 
 	// TODO: Handle error
 	m, _ := json.Marshal(v)
 	resp, err := http.Post(h.target+v.URL(), "application/json", bytes.NewReader(m))
 	h.logSending(resp, err)
+
+	return err
 }
 
 func (h *Handler) translateLastResponses(u *usrCfg, rs []story.Response) ([]story.Response, bool) {
@@ -158,21 +179,20 @@ func (h *Handler) translateLastResponses(u *usrCfg, rs []story.Response) ([]stor
 	return rs, false
 }
 
-func (h *Handler) before(v Sender) {
-	if a, ok := v.(*SendAudio); ok {
+func (h *Handler) before(v Sender) error {
+	if a, ok := v.(ChatActionSender); ok {
 		m, _ := json.Marshal(SendChatAction{
-			ChatID: a.ChatID,
-			Action: "upload_document",
+			ChatID: a.GetChatID(),
+			Action: a.ChatAction(),
 		})
-		http.Post(h.target+"/sendChatAction", "application/json", bytes.NewReader(m))
+		_, err := http.Post(h.target+"/sendChatAction", "application/json", bytes.NewReader(m))
+		if err != nil {
+			h.lgr.Printf("before error: %v", err)
+			return fmt.Errorf("tg: before err: %w", err)
+		}
 	}
-	if a, ok := v.(*SendPhoto); ok {
-		m, _ := json.Marshal(SendChatAction{
-			ChatID: a.ChatID,
-			Action: "upload_photo",
-		})
-		http.Post(h.target+"/sendChatAction", "application/json", bytes.NewReader(m))
-	}
+
+	return nil
 }
 
 func (h *Handler) updateUsrCfg(id int, u *usrCfg, r story.Response, translated bool) {
@@ -184,7 +204,11 @@ func (h *Handler) updateUsrCfg(id int, u *usrCfg, r story.Response, translated b
 
 // ServeHTTP implements http.Handler
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.send(h.receive(w, r))
+	u, err := h.receive(w, r)
+	if err != nil {
+		return
+	}
+	h.send(u)
 }
 
 // convertText converts Update info into text usable by Story

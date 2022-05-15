@@ -66,6 +66,14 @@ func (s *SendPhoto) URL() string {
 	return "/sendPhoto"
 }
 
+func (s *SendPhoto) GetChatID() int {
+	return s.ChatID
+}
+
+func (s *SendPhoto) ChatAction() string {
+	return "upload_photo"
+}
+
 // SetChatID sets chat ID for current sender
 func (s *SendAudio) SetChatID(i int) {
 	s.ChatID = i
@@ -79,6 +87,14 @@ func (s *SendAudio) SetContent(a string) {
 // URL returns Telegram endpoint to process current sender
 func (s *SendAudio) URL() string {
 	return "/sendAudio"
+}
+
+func (s *SendAudio) GetChatID() int {
+	return s.ChatID
+}
+
+func (s *SendAudio) ChatAction() string {
+	return "upload_document"
 }
 
 // SetChatID sets chat ID for current sender

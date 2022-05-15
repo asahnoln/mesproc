@@ -412,6 +412,46 @@ func TestCancelLaterMessage(t *testing.T) {
 	assert.Equal(t, "should be unreachable", stg.gotText[5])
 }
 
+func TestWrongUpdateError(t *testing.T) {
+	b := &bytes.Buffer{}
+	lgr := log.New(b, "", 0)
+	th := tg.New("", nil, lgr)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", nil)
+	th.ServeHTTP(w, r)
+
+	assert.Equal(t, "receive error: EOF\n", b.String(), "want error message in body")
+}
+
+func TestChatActionError(t *testing.T) {
+	stg := stubTgServer{}
+	close, target := stg.tgServerAlwaysRedir()
+	defer close()
+
+	b := &bytes.Buffer{}
+	lgr := log.New(b, "", 0)
+
+	str := story.New().Add(story.NewStep().Expect("oh").Respond("photo:http://example.com/pic.jpg"))
+
+	th := tg.New(target, str, lgr)
+
+	obj := tg.Update{
+		Message: tg.Message{
+			Chat: tg.Chat{
+				ID: 222,
+			},
+			Text: "oh",
+		},
+	}
+	body, _ := json.Marshal(obj)
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(body))
+	th.ServeHTTP(w, r)
+
+	assert.Contains(t, b.String(), "stopped after 10 redirects", "want error message in body")
+}
+
 // func TestTelegramError(t *testing.T) {
 // 	stg := &stubTgServer{}
 // 	close, target := stg.tgServerErrMockURL()
@@ -437,33 +477,41 @@ func TestCancelLaterMessage(t *testing.T) {
 // 	assert.Equal(t, "good", stg.gotText[0])
 // }
 
-func (s *stubTgServer) tgServerErrMockURL() (func(), string) {
-	i := 0
+func (s *stubTgServer) tgServerAlwaysRedir() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mux := http.NewServeMux()
-		s.gotPath = append(s.gotPath, r.URL.Path)
-		fillData := func(id int, text string, r *http.Request) {
-			s.gotHeader = append(s.gotHeader, r.Header.Get("Content-Type"))
-			s.gotChatID = append(s.gotChatID, id)
-			s.gotText = append(s.gotText, text)
-		}
-		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
-			var m tg.SendMessage
-			json.NewDecoder(r.Body).Decode(&m)
-			fillData(m.ChatID, m.Text, r)
-		})
-
-		i++
-		if i > 3 {
-			mux.ServeHTTP(w, r)
-			return
-		}
-
-		http.Error(w, "telegram error", http.StatusInternalServerError)
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
 	}))
 
 	return srv.Close, srv.URL
 }
+
+// func (s *stubTgServer) tgServerErrMockURL() (func(), string) {
+// 	i := 0
+// 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		mux := http.NewServeMux()
+// 		s.gotPath = append(s.gotPath, r.URL.Path)
+// 		fillData := func(id int, text string, r *http.Request) {
+// 			s.gotHeader = append(s.gotHeader, r.Header.Get("Content-Type"))
+// 			s.gotChatID = append(s.gotChatID, id)
+// 			s.gotText = append(s.gotText, text)
+// 		}
+// 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
+// 			var m tg.SendMessage
+// 			json.NewDecoder(r.Body).Decode(&m)
+// 			fillData(m.ChatID, m.Text, r)
+// 		})
+
+// 		i++
+// 		if i > 3 {
+// 			mux.ServeHTTP(w, r)
+// 			return
+// 		}
+
+// 		http.Error(w, "telegram error", http.StatusInternalServerError)
+// 	}))
+
+// 	return srv.Close, srv.URL
+// }
 
 func (s *stubTgServer) tgServerMockURL() (func(), string) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -476,23 +524,23 @@ func (s *stubTgServer) tgServerMockURL() (func(), string) {
 		}
 		mux.HandleFunc("/sendMessage", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendMessage
-			json.NewDecoder(r.Body).Decode(&m)
+			_ = json.NewDecoder(r.Body).Decode(&m)
 			fillData(m.ChatID, m.Text, r)
 		})
 		mux.HandleFunc("/sendAudio", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendAudio
-			json.NewDecoder(r.Body).Decode(&m)
+			_ = json.NewDecoder(r.Body).Decode(&m)
 			fillData(m.ChatID, m.Audio, r)
 		})
 		// TODO: When testing new uris easy to forget to add them, should be error or something?
 		mux.HandleFunc("/sendPhoto", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendPhoto
-			json.NewDecoder(r.Body).Decode(&m)
+			_ = json.NewDecoder(r.Body).Decode(&m)
 			fillData(m.ChatID, m.Photo, r)
 		})
 		mux.HandleFunc("/sendChatAction", func(w http.ResponseWriter, r *http.Request) {
 			var m tg.SendChatAction
-			json.NewDecoder(r.Body).Decode(&m)
+			_ = json.NewDecoder(r.Body).Decode(&m)
 			fillData(m.ChatID, m.Action, r)
 		})
 

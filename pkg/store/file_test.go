@@ -33,9 +33,9 @@ func TestFileSuccessors(t *testing.T) {
 	defer removeDir(t, dir)
 
 	s := store.NewFile(dir)
-	s.Save("my review 1")
-	s.Save("my review 2")
-	s.Save("my review 3")
+	_ = s.Save("my review 1")
+	_ = s.Save("my review 2")
+	_ = s.Save("my review 3")
 
 	dirs, err := os.ReadDir(dir)
 	require.NoError(t, err, "unexpected error while opening the file")

@@ -28,16 +28,12 @@ func (r Response) Lang() string {
 }
 
 // Story holds information on the current story.
-// It has steps and i18n. The story is unfolded by using RespondTo, which always
-// advances internal counter to the next step until all steps are processed.
-// Then, it starts from the beginning.
+// It has steps and i18n.
 type Story struct {
-	steps        []*Step
-	cmds         map[string]*Step
-	unordered    map[string]*Step
-	curStepIndex int
-	i18n         I18nMap
-	lang         string
+	steps     []*Step
+	cmds      map[string]*Step
+	unordered map[string]*Step
+	i18n      I18nMap
 }
 
 // New creates a new Story
