@@ -16,11 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build
-        run: go build -v ./...
-
       - name: Lint and test
         run: make test
+
+      - name: Build
+        run: make build
 
       - name: Codecov
         run: bash <(curl -s https://codecov.io/bash)
