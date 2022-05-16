@@ -1,3 +1,5 @@
+include .env
+
 .PHONY: lint unit-test build
 
 all: build
