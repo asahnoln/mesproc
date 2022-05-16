@@ -19,3 +19,10 @@ RUN --mount=target=. \
 
 FROM scratch AS coverage-test
 COPY --from=test /src/coverage.txt /
+
+FROM base AS build
+RUN --mount=target=. \
+    go build -o /out/webhook -v ./cmd/webhook
+
+FROM scratch AS bin
+COPY --from=build /out/webhook /

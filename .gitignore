@@ -3,8 +3,5 @@
 *.log
 tmp/
 
-cmd/webhook/webhook
-cmd/longpoll/longpoll
-debug.test
-cover.out
+bin/
 coverage.txt
